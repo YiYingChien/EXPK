@@ -1,0 +1,712 @@
+#at EXPK/analysis
+do at non conda environment at early time, later do at conda base environment
+-----------------------------------------------trimmomatic------------------------------------------------
+#bash
+cd ../ExpKRNA/rawData/
+ls | grep R1 | sed 's/^/\.\.\/ExpKRNA\/rawData\//g'>../../analysis/R1_list
+ls | grep R2 | sed 's/^/\.\.\/ExpKRNA\/rawData\//g'>../../analysis/R2_list
+mkdir paired
+mkdir unpaired
+
+cd ../../analysis
+head R1_list >test_R1_list 
+head R2_list >test_R2_list 
+
+#/home/yee/jdk-23.0.1/bin/java -jar ../../usr/bin/trimmomatic.jar PE -threads 70 -phred33 ../ExpKRNA/rawData/K10-K15-F1_22CWMVLT4_R1.fastq.gz ../ExpKRNA/rawData/K10-K15-F1_22CWMVLT4_R2.fastq.gz K10-K15-F1_22CWMVLT4_R1_paired.fastq.gz K10-K15-F1_22CWMVLT4_R2_paired.fastq.gz K10-K15-F1_22CWMVLT4_R1_unpaired.fastq.gz K10-K15-F1_22CWMVLT4_R2_unpaired.fastq.gz ILLUMINACLIP:../../trimmomatic-master/adapters/TruSeq3-PE.fa:2:30:10:2:True LEADING:3 TRAILING:3 MINLEN:36
+
+#cat test_R1_list | sed 's/R1/R1_paired/g' | sed 's/rawData/paired/g'>test_R1_paired_list
+#cat test_R2_list | sed 's/R2/R2_paired/g' | sed 's/rawData/paired/g'>test_R2_paired_list
+#cat test_R1_list | sed 's/R1/R1_unpaired/g' | sed 's/rawData/unpaired/g'>test_R1_unpaired_list
+#cat test_R2_list | sed 's/R2/R2_unpaired/g' | sed 's/rawData/unpaired/g'>test_R2_unpaired_list
+
+#!/bin/bash
+#test_R1=()
+#test_R2=()
+#test_R1_paired=()
+#test_R2_paired=()
+#test_R1_unpaired=()
+#test_R2_unpaired=()
+#while IFS= read -r line;
+# do test_R1+=("$line") 
+#done < test_R1_list
+#while IFS= read -r line; 
+#do test_R2+=("$line")
+# done < test_R2_list 
+#while IFS= read -r line; 
+#do test_R1_paired+=("$line") 
+#done < test_R1_paired_list
+#while IFS= read -r line;
+# do test_R2_paired+=("$line") 
+#done < test_R2_paired_list 
+#while IFS= read -r line; 
+#do test_R1_unpaired+=("$line")
+# done < test_R1_unpaired_list 
+#while IFS= read -r line; 
+#do test_R2_unpaired+=("$line") 
+#done < test_R2_unpaired_list
+
+for i in $(seq 0 $((${#test_R1[@]}-1))); 
+do arg1="${test_R1[$i]}" arg2="${test_R2[$i]}" arg3="${test_R1_paired[$i]}" arg4="${test_R2_paired[$i]}" arg5="${test_R1_unpaired[$i]}" arg6="${test_R2_unpaired[$i]}" 
+/home/yee/jdk-23.0.1/bin/java -jar ../../usr/bin/trimmomatic.jar PE -threads 70 -phred33 $arg1 $arg2 $arg3 $arg4 $arg5 $arg6 ILLUMINACLIP:../../trimmomatic-master/adapters/TruSeq3-PE.fa:2:30:10:2:True LEADING:3 TRAILING:3 MINLEN:36
+done
+
+cat R1_list | sed 's/R1/R1_paired/g' | sed 's/rawData/paired/g'>R1_paired_list
+cat R2_list | sed 's/R2/R2_paired/g' | sed 's/rawData/paired/g'>R2_paired_list
+cat R1_list | sed 's/R1/R1_unpaired/g' | sed 's/rawData/unpaired/g'>R1_unpaired_list
+cat R2_list | sed 's/R2/R2_unpaired/g' | sed 's/rawData/unpaired/g'>R2_unpaired_list
+
+#!/bin/bash
+R1=()
+R2=()
+R1_paired=()
+R2_paired=()
+R1_unpaired=()
+R2_unpaired=()
+while IFS= read -r line;
+ do R1+=("$line") 
+done < R1_list
+while IFS= read -r line; 
+do R2+=("$line")
+ done < R2_list 
+while IFS= read -r line; 
+do R1_paired+=("$line") 
+done < R1_paired_list
+while IFS= read -r line;
+ do R2_paired+=("$line") 
+done < R2_paired_list 
+while IFS= read -r line; 
+do R1_unpaired+=("$line")
+ done < R1_unpaired_list 
+while IFS= read -r line; 
+do R2_unpaired+=("$line") 
+done < R2_unpaired_list
+
+for i in $(seq 0 $((${#R1[@]}-1))); 
+do arg1="${R1[$i]}" arg2="${R2[$i]}" arg3="${R1_paired[$i]}" arg4="${R1_unpaired[$i]}" arg5="${R2_paired[$i]}" arg6="${R2_unpaired[$i]}" 
+/home/yee/jdk-23.0.1/bin/java -jar ../../usr/bin/trimmomatic.jar PE -threads 70 -phred33 $arg1 $arg2 $arg3 $arg4 $arg5 $arg6 ILLUMINACLIP:../../trimmomatic-master/adapters/TruSeq3-PE.fa:2:30:10:2:True LEADING:3 TRAILING:3 MINLEN:36
+done
+#bash
+-----------------------------------------------fastqc and multiqc-----------------------------------------
+#conda
+conda create --name multiQc python=3.11
+conda activate multiQc
+conda install multiqc
+#conda
+#bash
+ls ../ExpKRNA/paired/ | grep gz | sed 's/^/\.\.\/ExpKRNA\/paired\//g' | sed -n -e 'H;${x;s/\n/ /g;p;}'>paired_list
+while IFS= read -r file;
+do fastqc -t 72 $file -o ../ExpKRNA/paired/
+done<paired_list
+
+mkdir fastqc
+mkdir fastqc_report
+mv *.html ./fastqc_report/
+mv *.zip fastqc
+#bash
+#conda
+multiqc ../ExpKRNA/paired/fastqc -o ../ExpKRNA/paired/
+#conda
+-------------------------------------------------------trinity--------------------------------------------------
+#bash
+ls ../ExpKRNA/rawData/ | grep .gz | sed 's/_R[12].fastq.gz/_trinity/' | sed 's/^/trinity\//' |sort |uniq > sample_ID
+#Trinity --seqType fq --max_memory 500G \
+         --left ../ExpKRNA/paired/K10-K15-F1_22CWMVLT4_R1_paired.fastq.gz \
+         --right ../ExpKRNA/paired/K10-K15-F1_22CWMVLT4_R2_paired.fastq.gz \
+         --CPU 36 
+
+#Trinity --seqType fq --max_memory 500G \
+         --left ../ExpKRNA/paired/K10-K15-F1_22CWMVLT4_R1_paired.fastq.gz \
+         --right ../ExpKRNA/paired/K10-K15-F1_22CWMVLT4_R2_paired.fastq.gz \
+         --CPU 36 \
+--output trinity /K10-K15-F1_22CWMVLT4_trinity
+
+while IFS= read -r line; 
+do ID+=("$line") 
+done < sample_ID
+
+for i in $(seq 0 $((${#R1_paired[@]}-1))); 
+do arg1="${R1_paired[$i]}" arg2="${R2_paired[$i]}" arg3="${ID[$i]}" 
+Trinity --seqType fq --max_memory 200G --left $arg1 --right $arg2 --CPU 72 --output $arg3
+done
+
+
+Trinity --seqType fq --max_memory 200G \ --left ../ExpKRNA/paired/K49-K55-F1_22CWMVLT4_R1_paired.fastq.gz \ --right ../ExpKRNA/paired/K49-K55-F1_22CWMVLT4_R2_paired.fastq.gz \ --CPU 72 \ --output trinity/K49-K55-F1_22CWMVLT4_trinity
+---------------------------------------------------bowtie2---------------------------------------------------
+cat sample_ID |sed 's/trinity\///'| sed 's/_trinity//'>index_list
+cat sample_ID | sed 's/_trinity/_trinity.Trinity.fasta/'>bowtie2_fasta_input
+while IFS= read -r line; 
+do bowtie2_input+=("$line") 
+done <bowtie2_fasta_input
+while IFS= read -r line; 
+do bowtie2_index+=("$line") 
+done <index_list
+for i in $(seq 0 $((${#bowtie2_input[@]}-1))); 
+do arg1="${bowtie2_input[$i]}" arg2="${bowtie2_index[$i]}"  
+bowtie2-build $arg1 $arg2
+done
+
+cat index_list | sed -e 's/^/bowtie2\//' -e's/$/.bam/'>bam_list
+cat index_list | sed -e's/$/_align_stats.txt/'> align_stats_list
+while IFS= read -r line; 
+do bam+=("$line") 
+done <bam_list
+while IFS= read -r line; 
+do align_stats+=("$line") 
+done <align_stats_list
+for i in $(seq 0 $((${#bowtie2_index[@]}-1))); 
+do arg1="${bowtie2_index[$i]}" arg2="${R1_paired[$i]}" arg3="${R2_paired[$i]}" arg4="${align_stats[$i]}" arg5="${bam[$i]}" 
+bowtie2 -p 72 -q --no-unal -k 20 -x $arg1 -1 $arg2 -2 $arg3  \
+     2>$arg4| samtools view -@72 -Sb -o $arg5
+done
+
+---------------------------------------------------RSEM---------------------------------------------------
+conda install -n base -c conda-forge mamba
+
+#not use
+conda create --name rnaquast
+conda activate rnaquast
+mamba install rnaquast
+mamba install bioconda::busco
+conda create --name RSEM 
+mamba install bioconda::rsem
+#not use
+
+for file in "${bam[@]}" 
+do 
+	sorted_file="${file%.bam}_sorted.bam"
+	samtools sort -n -@ 72 "$file" -o "$sorted_file"
+done
+
+
+#conda
+#not use in further analysis
+conda activate RSEM
+for i in $(seq 0 $((${#bowtie2_index[@]}-1))); 
+do
+rsem-prepare-reference -p 72 --bowtie2 "${bowtie2_input[$i]}" --transcript-to-gene-map "${bowtie2_input[$i]#bowtie2}.gene_trans_map" "RSEM${bowtie2_index[$i]#bowtie2}_rsem_reference"
+done
+
+for i in $(seq 0 $((${#bowtie2_index[@]}-1))); 
+do
+	rsem-calculate-expression -p 72 --bam --paired-end "${bam[$i]%.bam}_sorted.bam" "RSEM${bowtie2_index[$i]#bowtie2}_rsem_reference" "RSEM${bowtie2_index[$i]#bowtie2}_rsem_output"
+done
+conda deactivate
+#not use in further analysis
+
+#base 
+for i in $(seq 0 $((${#bowtie2_input[@]}-1)));  
+do align_and_estimate_abundance.pl --thread_count 72 --seqType fq --seqType fq --left "${R1_paired[$i]}" --right "${R2_paired[$i]}" --transcripts "${bowtie2_input[$i]}" --est_method RSEM --aln_method bowtie --gene_trans_map "${bowtie2_input[$i]}.gene_trans_map" --trinity_mode --prep_reference --output_dir ./transcript_abundance --output_prefix ${bowtie2_index[$i]#bowtie2/}; 
+done
+-----------------------------------------------infernal and Rfam------------------------------------------
+mamba install bioconda::infernal
+cd
+mkdir Rfam
+mv *.cm ./Rfam
+wget https://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/Rfam.tar.gz
+tar -zxf Rfam.tar.gz
+wget https://ftp.ebi.ac.uk/pub/databases/Rfam/15.0/Rfam.cm.gz
+gunzip Rfam.cm.gz
+wget https://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/Rfam.clanin
+mv Rfam.clanin Rfam.cm ./Rfam
+wget https://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/database_files/family.txt.gz
+gunzip family.txt.gz
+mv family.txt ./Rfam
+cd /EXPK/analysis
+cmpress ../../Rfam/Rfam.cm
+mamba install bioconda::easel
+
+for file in "${bowtie2_input[@]}"
+do
+	esl-seqstat "$file" | grep "Total # residues" | cut -d " " -f 7 >>total_residues
+done
+
+mkdir infernal
+
+paste total_residues index_list bowtie2_fasta_input | while IFS=$'\t' read -r f1 f2 f3;
+do
+cmscan -Z $(("$f1"*2/1000000)) --cut_ga --rfam --nohmmonly --tblout "infernal/$f2.tblout" --fmt 2 --cpu 72 --clanin ~/Rfam/Rfam.clanin ~/Rfam/Rfam.cm "$f3" > "infernal/$f2.cmscan" 
+done;
+
+#filtered.tblout has replicate ID not unique 
+while IFS= read -r index;
+do 
+	grep -v "=" infernal/"${index}".tblout > infernal/"${index}"_filtered.tblout
+done<index_list
+
+#noncoding has replicate ID not unique
+while IFS= read -r index;
+do 
+	grep "TRINITY" infernal/"${index}"_filtered.tblout | awk 'BEGIN{OFS="\t"} {print $4}' | sed -e "s/^/"${index}"_/"> infernal/"${index}"_noncoding
+done<index_list
+
+while IFS= read -r index;
+do 
+	echo "${index}"_noncoding
+	sort infernal/"${index}"_noncoding |uniq | wc -l
+done<index_list
+
+#unique ID
+#K10-K15-F1_22CWMVLT4_noncoding
+#2374
+#K10-K9-F2_22CWMVLT4_noncoding
+#1321
+#K17-K19-F2_22CWMVLT4_noncoding
+#1469
+#K1-K3-F2_22CWMVLT4_noncoding
+#1912
+#K20-K24-F2_22CWMVLT4_noncoding
+#12468
+#K20-K28-F1_22CWMVLT4_noncoding
+#891
+#K21-K25-F2_22CWMVLT4_noncoding
+#467
+#K25-K29-F1_22CWMVLT4_noncoding
+#942
+#K28-K29-F2_22CWMVLT4_noncoding
+#512
+#K2-K4-F2_22CWMVLT4_noncoding
+#793
+#K41-K42-F2_22CWMVLT4_noncoding
+#1141
+#K44-K47-F2_22CWMVLT4_noncoding
+#799
+
+
+wc -l trinity/*_re.fasta
+    #389412 trinity/K10-K15-F1_22CWMVLT4_trinity.Trinity_re.fasta
+    #511328 trinity/K10-K9-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #592240 trinity/K17-K19-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #977222 trinity/K1-K3-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #592816 trinity/K20-K24-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #411328 trinity/K20-K28-F1_22CWMVLT4_trinity.Trinity_re.fasta
+    #410816 trinity/K21-K25-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #469612 trinity/K25-K29-F1_22CWMVLT4_trinity.Trinity_re.fasta
+    #404576 trinity/K28-K29-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #627700 trinity/K2-K4-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #567798 trinity/K41-K42-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #684324 trinity/K44-K47-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #546608 trinity/K45-K53-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #727748 trinity/K49-K55-F1_22CWMVLT4_trinity.Trinity_re.fasta
+    #159584 trinity/K4-K5-F1_22CWMVLT4_trinity.Trinity_re.fasta
+    #733538 trinity/K50-K54-F1_22CWMVLT4_trinity.Trinity_re.fasta
+    #563400 trinity/K52-K50-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #529254 trinity/K58-K60-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #573032 trinity/K59-K57-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #504920 trinity/K5-K7-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #561512 trinity/K61-K67-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #506678 trinity/K62-K56-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #564640 trinity/K64-K63-F2_22CWMVLT4_trinity.Trinity_re.fasta
+    #600842 trinity/K70-K66-F2_22CWMVLT4_trinity.Trinity_re.fasta
+  #13210928 total
+
+#K10-K15-F1_22CWMVLT4:0.61%
+#K10-K9-F2_22CWMVLT4:0.26%
+#K17-K19-F2_22CWMVLT4:0.25%
+#K1-K3-F2_22CWMVLT4:0.2%
+#K20-K24-F2_22CWMVLT4:2.1%
+#K20-K28-F1_22CWMVLT4:0.22%
+#K21-K25-F2_22CWMVLT4:0.11%
+#K25-K29-F1_22CWMVLT4:0.2%
+#K28-K29-F2_22CWMVLT4:0.13%
+#K2-K4-F2_22CWMVLT4:0.13%
+#K41-K42-F2_22CWMVLT4:0.2%
+#K44-K47-F2_22CWMVLT4:0.12%
+#K45-K53-F2_22CWMVLT4:0.1%
+#K49-K55-F1_22CWMVLT4:0.24%
+#K4-K5-F1_22CWMVLT4:0.17%
+#K50-K54-F1_22CWMVLT4:0.13%
+#K52-K50-F2_22CWMVLT4:0.18%
+#K58-K60-F2_22CWMVLT4:0.2%
+#K59-K57-F2_22CWMVLT4:0.16%
+#K5-K7-F2_22CWMVLT4:0.19%
+#K61-K67-F2_22CWMVLT4:0.17%
+#K62-K56-F2_22CWMVLT4:0.27%
+#K64-K63-F2_22CWMVLT4:0.15%
+#K70-K66-F2_22CWMVLT4:0.15%
+
+while IFS= read -r index;
+do 
+	grep -v -F -f <(grep -w -A 1 -f infernal/"${index}"_noncoding trinity/"${index}"_trinity.Trinity_re.fasta) trinity/"${index}"_trinity.Trinity_re.fasta >trinity/"${index}"_trinity.Trinity_coding.fasta 
+done<index_list
+
+#for check
+#while IFS= read -r index;
+#do 
+#echo "${index}"
+#grep -wf infernal/"${index}"_noncoding #trinity/"${index}"_trinity.Trinity_re.fasta | wc -l
+#sort infernal/"${index}"_noncoding | uniq | wc -l
+#grep -w -A 1 -f infernal/"${index}"_noncoding #trinity/"${index}"_trinity.Trinity_re.fasta |grep -v "^--$"| wc -l
+#wc -l trinity/"${index}"_trinity.Trinity_coding.fasta
+#wc -l trinity/"${index}"_trinity.Trinity_re.fasta 
+#done<index_list
+
+#not used
+------------------------------------------------MicroFisher --------------------------------------------
+cd
+conda create -n MicroFisher Python=3.12
+conda activate MicroFisher
+conda install bioconda::centrifuge
+git clone https://github.com/NFREC-Liao-Lab/MicroFisher.git
+cd MicroFisher/microfisher
+pip3 install -r requirements.txt
+pip3 install .
+MicroFisher init_db
+
+cd ~/EXPK/analysis/
+mkdir microfisher
+
+while IFS= read -r line;
+do 
+	ln "$line" "./microfisher${line#../ExpKRNA/paired}"
+done<R1_paired_list
+
+while IFS= read -r line;
+do 
+	ln "$line" "./microfisher${line#../ExpKRNA/paired}"
+done<R2_paired_list
+
+paste R1_paired_list R2_paired_list index_list| while IFS=$'\t' read -r f1 f2 f3;
+do
+	MicroFisher preset --preset_db LSU --db_path /home/yee/MicroFisher/microfisher/default_db --min 120 --workspace microfisher --paired "${f1#../ExpKRNA/paired/}" "${f2#../ExpKRNA/paired/}" --out_dir microfisher_output --out_prefix "$f3" --threads 72
+done
+
+cd /microfisher/microfisher_output 
+ls | grep _report.tsv > report_list
+xargs cat < report_list | grep -v name | sort > total_output
+
+#check
+MicroFisher preset --preset_db LSU --db_path /home/yee/MicroFisher/microfisher/default_db --min 120 --workspace microfisher --paired K10-K15-F1_22CWMVLT4_R1_paired.fastq.gz K10-K15-F1_22CWMVLT4_R2_paired.fastq.gz --out_dir retest --out_prefix K10-K15-F1_22CWMVLT4 --threads 72
+MicroFisher preset --preset_db LSU --db_path /home/yee/MicroFisher/microfisher/default_db --min 120 --workspace ../ExpKRNA/paired/ --paired K10-K15-F1_22CWMVLT4_R1_paired.fastq.gz K10-K15-F1_22CWMVLT4_R2_paired.fastq.gz --out_dir retest --out_prefix K10-K15-F1_22CWMVLT4 --threads 72
+
+#modified from chatgpt, not used
+--------------------------------------------longest transcript------------------------------------
+mamba install conda-forge::parallel
+#!/bin/bash
+
+process_file() {
+    filename="$1"
+
+    # 確保檔案存在
+    if [[ ! -f "$filename" ]]; then
+        echo "檔案 $filename 不存在，跳過..."
+        return
+    fi
+
+    # 取得輸出檔名前綴
+    output_prefix=$(echo "$filename" | sed 's/_trinity\.Trinity\.fasta\.gene_trans_map//')
+
+    # 初始化變數
+    tmp_gene=""
+    declare -A seen_genes
+    rep_gene=()
+    uni_gene=()
+
+    # 讀取檔案內容
+    while IFS= read -r line; do
+        gene=$(echo "$line" | cut -f1)
+
+        if [[ -z "$tmp_gene" ]]; then
+            tmp_gene="$gene"
+            continue
+        fi
+
+        if [[ "$tmp_gene" == "$gene" ]]; then
+            seen_genes["$gene"]=1
+        else
+            if [[ -z "${seen_genes[$tmp_gene]}" ]]; then
+                uni_gene+=("$tmp_gene")
+            else
+                rep_gene+=("$tmp_gene")
+            fi
+            tmp_gene="$gene"
+        fi
+    done < "$filename"
+
+    # 檢查最後一個基因
+    if [[ -n "$tmp_gene" && -z "${seen_genes[$tmp_gene]}" ]]; then
+        uni_gene+=("$tmp_gene")
+    elif [[ -n "$tmp_gene" ]]; then
+        rep_gene+=("$tmp_gene")
+    fi
+
+    # 寫入輸出檔案
+    printf "%s\n" "${rep_gene[@]}" > "${output_prefix}_rep_gene"
+    printf "%s\n" "${uni_gene[@]}" > "${output_prefix}_uni_gene"
+
+    echo "完成處理: ${output_prefix}_rep_gene 和 ${output_prefix}_uni_gene"
+}
+
+export -f process_file  # 讓 `parallel` 能夠調用函數
+
+# 並行處理所有檔案，每次最多使用 72 個核心
+cat bowtie2_fasta_input | sed 's/\.fasta/\.fasta\.gene_trans_map/'| parallel -j 72 process_file {}
+
+cat bowtie2_fasta_input|sed 's/_trinity.Trinity.fasta/_uni_gene/'>uni_gene
+cat bowtie2_fasta_input|sed 's/_trinity.Trinity.fasta/_rep_gene/'>rep_gene
+
+while IFS= read -r index;
+do  
+	sed -E "s/>/>"$index"_/g" "trinity/${index}_trinity.Trinity.fasta"| sed -E ':a;N;$!ba;s/\n//g; s/[A-Z]>/\n>/g; s/[0-9]]/]\n/g' > "trinity/${index}_trinity.Trinity_re.fasta"
+done<index_list
+
+sed 's/Trinity.fasta/Trinity_re.fasta/' bowtie2_fasta_input > re_fasta_list
+
+
+#!/bin/bash
+
+# 讀取 uni_gene 並處理
+process_uni_gene() {
+    uni_gene_file="$1"
+    output_prefix="$2"
+    fasta_file="$3"
+
+    echo "正在處理 uni_gene: $uni_gene_file"
+	
+    # 逐行讀取基因 ID，使用 grep 搜尋 fasta 檔案中的基因名稱並提取符合的結果與下一行
+    while IFS= read -r gene; do
+       grep -A 1 "$gene" "$fasta_file" >> "trinity/${output_prefix}_extract.fasta"
+    done < "$uni_gene_file"
+
+    echo "完成: ${output_prefix}_extract.fasta"
+}
+
+# 讀取 rep_gene 並處理
+process_rep_gene() {
+    rep_gene_file="$1"
+    output_prefix="$2"
+    fasta_file="$3"
+
+    echo "正在處理 rep_gene: $rep_gene_file"
+
+    while IFS= read -r gene; do
+        # 取得第二條件
+	        second_condition=$(grep "$gene" "$fasta_file" | cut -d" " -f2 | cut -d"=" -f2 | sort -n | tail -1)
+        # 使用 grep 查找符合的基因與第二條件
+        grep -A 1 -E "$gene.*$second_condition" "$fasta_file" |grep -v "^--$" >> "trinity/${output_prefix}_extract.fasta"
+    done < "$rep_gene_file"
+
+    echo "完成: ${output_prefix}_extract.fasta"
+}
+
+export -f process_uni_gene process_rep_gene  # 讓 parallel 可調用函數
+
+# 多核心處理主函數
+process_all() {
+    # 設定輸入檔案列表
+    uni_gene_list="uni_gene"
+    rep_gene_list="rep_gene"
+    fasta_list="re_fasta_list"
+    output_list="index_list"
+
+    # 讀取所有檔案並存入陣列
+    mapfile -t uni_gene_files < "$uni_gene_list"
+    mapfile -t rep_gene_files < "$rep_gene_list"
+    mapfile -t fasta_files < "$fasta_list"
+    mapfile -t output_prefixes < "$output_list"
+
+    # 確保四個列表長度一致
+    if [[ ${#uni_gene_files[@]} -ne ${#rep_gene_files[@]} ]] || 
+       [[ ${#uni_gene_files[@]} -ne ${#fasta_files[@]} ]] || 
+       [[ ${#uni_gene_files[@]} -ne ${#output_prefixes[@]} ]]; then
+        echo "錯誤: 檔案列表長度不匹配！請檢查輸入檔案。"
+        exit 1
+    fi
+    # 使用 parallel 進行多核心處理
+	parallel -j 72 process_uni_gene :::+ "${uni_gene_files[@]}" :::+ "${output_prefixes[@]}" :::+ "${fasta_files[@]}" 
+	parallel -j 72 process_rep_gene :::+ "${rep_gene_files[@]}" :::+ "${output_prefixes[@]}" :::+ "${fasta_files[@]}"
+    echo "所有檔案處理完畢！"
+}
+
+# 執行多核心處理
+process_all
+
+#grep ">" K10-K15-F1_22CWMVLT4_extract.fasta| cut -d" " -f1 | sed 's/>K10-K15-F1_22CWMVLT4_//' | sed 's/_i[0-9]\+//'|sort |uniq > K10-K15-F1_22CWMVLT4_check
+
+#cat K10-K15-F1_22CWMVLT4_uni_gene K10-K15-F1_22CWMVLT4_rep_gene |sort |uniq> K10-K15-F1_22CWMVLT4_ori
+
+#diff K10-K15-F1_22CWMVLT4_ori K10-K15-F1_22CWMVLT4_check
+----------------------------------------------------cd-hit--------------------------------------------------
+mamba install bioconda::cd-hit
+#not used
+#cat trinity/*_extract.fasta >cd-hit.fasta
+#cdhit -i cd-hit.fasta  -o cd-hit -c 1 -M 0 -T 0
+
+cat trinity/*_coding.fasta > coding.fasta
+../../trinityrnaseq-v2.15.2/util/misc/get_longest_isoform_seq_per_trinity_gene.pl coding.fasta > cd-hit-est.fasta
+cd-hit-est -i cd-hit-est.fasta -o cd-hit-est -c 1 -d 0 -M 0 -T 0
+
+#diamond, 
+----------------------------------------transcript assignment-----------------------------------
+cd
+wget https://ftp.ncbi.nlm.nih.gov/blast/db/nr-prot-metadata.json
+mkdir nr
+grep "ftp" nr-prot-metadata.json | sed -e 's/\    "/wget /g' -e 's/",//'>nr/nr_file_list
+cd nr
+bash nr_file_list
+while IFS= read -r file;
+do  
+	tar -zxf "${file#wget ftp://ftp.ncbi.nlm.nih.gov/blast/db/}"
+done<nr_file_list
+
+wget https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
+gunzip nr.gz
+
+diamond makedb --in nr -d nr_db
+diamond blastx -d /home/yee/nr_db -q EXPK/analysis/cd-hit-est -o EXPK/analysis/nr_aln --sensitive -p 72 -b 20 -c 1 -e 0.0000000001 --top 5
+
+cd
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/021/904/315/GCA_021904315.1_S.magellanicum_v1.1/GCA_021904315.1_S.magellanicum_v1.1_genomic.gff.gz
+gunzip GCA_021904315.1_S.magellanicum_v1.1_genomic.gff.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/021/904/315/GCA_021904315.1_S.magellanicum_v1.1/GCA_021904315.1_S.magellanicum_v1.1_genomic.fna.gz
+gunzip GCA_021904315.1_S.magellanicum_v1.1_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/021/904/315/GCA_021904315.1_S.magellanicum_v1.1/GCA_021904315.1_S.magellanicum_v1.1_protein.faa.gz
+gunzip GCA_021904315.1_S.magellanicum_v1.1_protein.faa.gz
+
+diamond makedb --in GCA_021904315.1_S.magellanicum_v1.1_protein.faa  -d S.magellanicum
+
+diamond blastx -d S.magellanicum -q EXPK/analysis/cd-hit-est -o EXPK/analysis/S.magellanicum_aln --sensitive -p 72 -b 50 -c 10 -e 0.000001
+
+wget http://github.com/bbuchfink/diamond/releases/download/v2.1.11/diamond-linux64.tar.gz
+tar xzf diamond-linux64.tar.gz
+
+cd EXPK/analysis
+awk '$3>=97 {print$0}' S.magellanicum_aln > S.magellanicum_aln_97
+awk '$3==100 {print$0}' S.magellanicum_aln > S.magellanicum_aln_100
+
+grep -cFf <(cut -f2 S.magellanicum_aln_97) ../../GCA_021904315.1_S.magellanicum_v1.1_genomic.gff 
+
+awk '$3==100 {print$0}' nr_aln >nr_aln_100
+awk '$3>=97 {print$0}' nr_aln >nr_aln_97
+
+-----------------------------------get transcript information-------------------------------
+cut -f2 nr_aln_97 >nr_aln_97_id
+esummary -db protein -input nr_aln_97_id | xtract -pattern DocumentSummary -element Caption, TaxId, Title >nr_aln_97_info
+
+#efetch -db protein -input nr_aln_97_id -format gb > nr_aln_97_id_gbinfo
+grep -E "ACCESSION" nr_aln_97_id_gbinfo | awk -F "   " '{print $2}'>nr_aln_97_info_part1
+#grep -E "taxon" nr_aln_97_id_gbinfo | awk -F "[:\"]" '{print $3}' > nr_aln_97_info_part2
+#grep -E "DEFINITION" nr_aln_97_id_gbinfo | awk -F "  " '{print $2}' >nr_aln_97_info_part3
+
+
+#efetch -db protein -input test -format xml | xtract -pattern BioSource -element -first Object-id_id
+#KAH9546190
+#MDG2769864
+#efetch -db protein -input test -format xml | xtract -pattern Bioseq -element -first Textseq-id_accession Seqdesc_title | grep -f test
+
+
+#while read acc; 
+#do efetch -db protein -id "$acc"  -format xml| xtract -pattern Bioseq-set_seq-set -element OrgName_lineage >>tt ;
+#done< test_ID
+
+mamba install -c bioconda taxonkit
+wget http://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz mv taxdump.tar.gz ../../
+tar -zxf ../../taxdump.tar.gz
+cut -f2 nr_aln_97_info | sort | uniq >nr_aln_97_taxid
+taxonkit --data-dir /home/yee lineage nr_aln_97
+
+#02:06:23.745 [WARN] taxid 1345260 was merged into 3076337
+#02:06:23.749 [WARN] taxid 1464779 was merged into 3370059
+#02:06:23.761 [WARN] taxid 1898818 was merged into 2849213
+#02:06:23.781 [WARN] taxid 286842 was merged into 235900
+#02:06:23.785 [WARN] taxid 325530 was merged into 2746698
+#02:06:23.787 [WARN] taxid 35662 was merged into 3370056
+#02:06:23.787 [WARN] taxid 35664 was merged into 3370057
+#02:06:23.787 [WARN] taxid 35665 was merged into 3370058
+#02:06:23.789 [WARN] taxid 381198 was merged into 8845
+
+taxonkit --data-dir /home/yee lineage merge_taxid > merge_taxon
+grep -A1 -Ff <(grep -Ff <(grep -Ff <(grep Sphagnum nr_aln_97_taxon | cut -f1) nr_aln_97_info | cut -f1) nr_aln_97 | cut -f1) cd-hit-est > Sphagnum.fasta
+grep -Ff <(grep Sphagnum nr_aln_97_taxon | cut -f1) nr_aln_97_info > Sphagnum_info
+grep -A1 -Ff <(grep -Ff <(grep -Ff <(grep Fungi nr_aln_97_taxon | cut -f1) nr_aln_97_info | cut -f1) nr_aln_97 | cut -f1) cd-hit-est > Fungi.fasta
+grep -Ff <(grep Fungi nr_aln_97_taxon | cut -f1) nr_aln_97_info > Fungi_info
+
+
+#efetch -db protein -id KAH9546190  -format xml| xtract -pattern Bioseq-set_seq-set -element OrgName_lineage 
+#efetch -db protein -id KAH9546190  -format gb | grep -e "DEFINITION"
+#efetch -db protein -id KAH9546190 -format xml | xtract -pattern Seq-id -element Textseq-id_accession
+-----------------------------------------combine information-------------------------------------
+#cat index_list | sed  's/^/transcript_abundance\//'| sed 's/$/\.isoforms\.results/' > isoforms_results
+#../../trinityrnaseq-v2.15.2/util/misc/merge_RSEM_output_to_matrix.pl --rsem_files  isoforms_results --mode counts > transcript_abundance/total_transcripts_counts
+
+#not used
+mkdir EXPK_longest
+makeblastdb -in cd-hit-est.fasta -dbtype nucl -out EXPK_longest/EXPK_longest
+
+blastn -db EXPK_longest/EXPK_longest -query coding.fasta -out longest_mapping_aln -evalue 1e-10 -outfmt 6 -num_threads 72
+
+awk '$3==100 {print$0}' longest_mapping_aln > longest_mapping_aln_100
+
+#modified from chatgpt
+#output=""
+#cat cd-hit-est.clstr | parallel --pipe -j 72 '
+#while IFS= read -r line; do
+#    if [[ "${line:0:1}" != ">" ]]; then
+#        index=$(echo "$line" | awk "{print \$1}")
+#        if [[ "$index" -eq 0 ]]; then
+#            gene=$(echo "$line" | awk -F "[>i]" "{print \$(NF-1)}" | rev | cut -c2- | rev)
+#            output+="$gene\t$gene\n"
+#        else
+#            isoform=$(echo "$line" | awk -F "[>i]" "{print \$(NF-1)}" | rev | cut -c2- | rev)
+#            output+="$gene\t$isoform\n"
+#        fi
+#    fi
+#done
+#echo -e "$output"
+#' > longest_mapping  # Save to a file
+
+#modified from chatgpt
+#!/bin/bash
+# Read the input file line by line, splitting into blocks based on lines starting with '>'
+awk '/^>/{if(NR>1)print ""; print $0; next} {print $0}' cd-hit-est.clstr | \
+    parallel --pipe --recend '\n\n' -j 72 '  # Process in parallel
+    awk -F "[>i]" "
+    { 
+		isoform = substr(\$2,1,length(\$2) -1)
+	        if (substr(\$1,1,1) == 0) {
+            gene = isoform  # First line of each block
+            print gene \"\t\" isoform
+    	    } else if (substr(\$1,1,1) != 0 && substr(\$1,1,1)!= \"\") {
+       		     print gene \"\t\" isoform
+        }
+    }"' > longest_mapping
+
+for file in "${bowtie2_index[@]}"
+do
+sed -E "s/TRINITY/${file}_TRINITY/g" transcript_abundance/${file}.genes.results >transcript_abundance/${file}.genes.re_results
+done
+
+ls transcript_abundance | grep "genes.re_results"| sed 's/^/transcript_abundance\//'> genes.re_result_list
+
+cat transcript_abundance/*genes.re_results| sort | tail -n+24 >transcript_abundance_gene_result
+sort -k2 longest_mapping> longest_mapping_sorted
+tail -n+2 transcript_abundance_gene_result | sort -k1 > transcript_abundance_gene_result_sorted
+
+awk ' NR==FNR { map[$1] = $2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7; next} {print $0"\t"map[$2]}' transcript_abundance_gene_result_sorted longest_mapping_sorted > longest_mapping_abundance
+
+#awk ' NR==FNR { map[$1] = $2"\t"$3"\t"$4; next} { isoform= substr($2,1,length($2) -2);
+print $0"\t"map[isoform]}' nr_aln_97_info nr_aln_97 > test
+
+#modified from chatgpt
+awk -F $'\t' '
+FNR==1 { file_count++ }  # Count how many files are processed
+
+{ 
+if (file_count == 1) {
+           map1[$1][1] = $2;  # Store data from each file using file_count as an index
+			map1 [$1][2] = $3;  # Store data from each file using file_count as an index
+			next;
+   } else if (file_count == 2) {
+map2[$1] = $2;  # Store data from each file using file_count as an index
+		next;
+   }
+    printf "%s\t",$0;  # Print the current line from file1.txt
+	isoform = substr($2, 1, length($2) - 2); # Remove last 2 characters from $2
+    if (isoform in map1) { 
+taxid = map1[isoform][1]; # Get taxid from map1 
+printf "%s\t%s\t", map1[isoform][1], map1[isoform][2]; # Print taxid and info 
+if (taxid in map2) { # Check if taxid exists in map2 
+printf "%s", map2[taxid]; # Print the corresponding taxon data
+} 
+}
+    print "";  # Newline
+}'  nr_aln_97_info nr_aln_97_taxon nr_aln_97 > nr_taxa_info
