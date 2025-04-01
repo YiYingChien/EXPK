@@ -588,11 +588,51 @@ grep -E "ACCESSION" nr_aln_97_id_gbinfo | awk -F "   " '{print $2}'>nr_aln_97_in
 #grep -E "DEFINITION" nr_aln_97_id_gbinfo | awk -F "  " '{print $2}' >nr_aln_97_info_part3
 
 
-#efetch -db protein -input test -format xml | xtract -pattern BioSource -element -first Object-id_id
-#KAH9546190
-#MDG2769864
-#efetch -db protein -input test -format xml | xtract -pattern Bioseq -element -first Textseq-id_accession Seqdesc_title | grep -f test
+grep -P "\t$" nr_taxa_info | cut -f2 | sort | uniq > lack_summary_ID
+grep -v "|" <(grep -v "^[0-9]" lack_summary_ID)| cut -d "." -f1 > with_Textseq_ID
+grep prf lack_summary_ID | cut -d "|" -f3 >prf_ID
+grep pir lack_summary_ID | cut -d "|" -f2 >pir_ID
+cat prf_ID pir_ID > with_Textseq-id_name
+grep "^[0-9]" lack_summary_ID>without_Textseq_ID
+awk 'BEGIN{FS=OFS="\t"}
+{
+cmd = "efetch -db protein -id " $0 " -format fasta | tail -n +2 | tr -d \"\n\"| wc -c";
+cmd | getline num
+close(cmd) 
+printf "%s\t%s\n",$0, num}' without_Textseq_ID > without_Textseq_ID_length
 
+awk 'BEGIN{FS=OFS="\t"}
+{
+cmd = "efetch -db protein -id " $0 " -format gi";
+cmd | getline gi
+close(cmd) 
+printf "%s\t%s\n",$0, gi}' without_Textseq_ID > without_Textseq_ID_gi
+
+	
+output=""
+cat with_Textseq_ID | parallel --pipe -j 72 '
+while IFS= read -r ID; 
+do
+efetch -db protein -id "$ID" -format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Textseq-id_accession -equals "$ID" -element -first Textseq-id_accession -block BioSource -element -first Object-id_id -block Bioseq -if Textseq-id_accession -equals "$ID" -element -first  Seqdesc_title 
+done
+echo -e "$output" | awk 'NF'
+' > lack_summary_part1
+
+output=""
+cat with_Textseq-id_name | parallel --pipe -j 72 '
+while IFS= read -r ID; 
+do
+efetch -db protein -id "$ID" -format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Textseq-id_name -equals "$ID" -element -first Textseq-id_name -block BioSource -element -first Object-id_id -block Bioseq -if Textseq-id_name -equals "$ID" -element -first  Seqdesc_title
+done
+echo -e "$output" | awk 'NF'
+' > lack_summary_part2
+
+#awk 'BEGIN{FS=OFS="\t"} {print "efetch -db protein -id",$1, "-format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Seq-inst_length -equals",$2,"-element PDB-mol-id Object-id_id Seqdesc_comment"}' without_Textseq_ID_length >without_Textseq_ID_script
+#bash without_Textseq_ID_script > lack_summary_part3
+
+awk 'BEGIN{FS=OFS="\t"} {print "efetch -db protein -id",$1, "-format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Seq-id_gi -equals",$2,"-element PDB-mol-id Object-id_id Seqdesc_comment"}' without_Textseq_ID_gi > without_Textseq_ID_script
+bash without_Textseq_ID_script > lack_summary_part3
+cat lack_summary_part1 lack_summary_part2 lack_summary_part3 >> nr_aln_97_info
 
 #while read acc; 
 #do efetch -db protein -id "$acc"  -format xml| xtract -pattern Bioseq-set_seq-set -element OrgName_lineage >>tt ;
@@ -614,6 +654,7 @@ taxonkit --data-dir /home/yee lineage nr_aln_97
 #02:06:23.787 [WARN] taxid 35665 was merged into 3370058
 #02:06:23.789 [WARN] taxid 381198 was merged into 8845
 
+echo -e "3076337\n2849213\n235900\n3397199\n3397198\n2746698\n8845\n4792" >merge_taxid 
 taxonkit --data-dir /home/yee lineage merge_taxid > merge_taxon
 grep -A1 -Ff <(grep -Ff <(grep -Ff <(grep Sphagnum nr_aln_97_taxon | cut -f1) nr_aln_97_info | cut -f1) nr_aln_97 | cut -f1) cd-hit-est > Sphagnum.fasta
 grep -Ff <(grep Sphagnum nr_aln_97_taxon | cut -f1) nr_aln_97_info > Sphagnum_info
