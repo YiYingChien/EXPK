@@ -130,7 +130,7 @@ Trinity --seqType fq --max_memory 200G --left $arg1 --right $arg2 --CPU 72 --out
 done
 
 
-Trinity --seqType fq --max_memory 200G \ --left ../ExpKRNA/paired/K49-K55-F1_22CWMVLT4_R1_paired.fastq.gz \ --right ../ExpKRNA/paired/K49-K55-F1_22CWMVLT4_R2_paired.fastq.gz \ --CPU 72 \ --output trinity/K49-K55-F1_22CWMVLT4_trinity
+#Trinity --seqType fq --max_memory 200G \ --left ../ExpKRNA/paired/K49-K55-F1_22CWMVLT4_R1_paired.fastq.gz \ --right ../ExpKRNA/paired/K49-K55-F1_22CWMVLT4_R2_paired.fastq.gz \ --CPU 72 \ --output trinity/K49-K55-F1_22CWMVLT4_trinity
 ---------------------------------------------------bowtie2---------------------------------------------------
 cat sample_ID |sed 's/trinity\///'| sed 's/_trinity//'>index_list
 cat sample_ID | sed 's/_trinity/_trinity.Trinity.fasta/'>bowtie2_fasta_input
@@ -535,7 +535,7 @@ cat trinity/*_coding.fasta > coding.fasta
 ../../trinityrnaseq-v2.15.2/util/misc/get_longest_isoform_seq_per_trinity_gene.pl coding.fasta > cd-hit-est.fasta
 cd-hit-est -i cd-hit-est.fasta -o cd-hit-est -c 1 -d 0 -M 0 -T 0
 
-#diamond, 
+#diamond
 ----------------------------------------transcript assignment-----------------------------------
 cd
 wget https://ftp.ncbi.nlm.nih.gov/blast/db/nr-prot-metadata.json
@@ -579,11 +579,12 @@ awk '$3==100 {print$0}' nr_aln >nr_aln_100
 awk '$3>=97 {print$0}' nr_aln >nr_aln_97
 
 -----------------------------------get transcript information-------------------------------
+#get taxid,function
 cut -f2 nr_aln_97 >nr_aln_97_id
 esummary -db protein -input nr_aln_97_id | xtract -pattern DocumentSummary -element Caption, TaxId, Title >nr_aln_97_info
 
 #efetch -db protein -input nr_aln_97_id -format gb > nr_aln_97_id_gbinfo
-grep -E "ACCESSION" nr_aln_97_id_gbinfo | awk -F "   " '{print $2}'>nr_aln_97_info_part1
+#grep -E "ACCESSION" nr_aln_97_id_gbinfo | awk -F "   " '{print $2}'>nr_aln_97_info_part1
 #grep -E "taxon" nr_aln_97_id_gbinfo | awk -F "[:\"]" '{print $3}' > nr_aln_97_info_part2
 #grep -E "DEFINITION" nr_aln_97_id_gbinfo | awk -F "  " '{print $2}' >nr_aln_97_info_part3
 
@@ -593,6 +594,7 @@ grep -v "|" <(grep -v "^[0-9]" lack_summary_ID)| cut -d "." -f1 > with_Textseq_I
 grep prf lack_summary_ID | cut -d "|" -f3 >prf_ID
 grep pir lack_summary_ID | cut -d "|" -f2 >pir_ID
 cat prf_ID pir_ID > with_Textseq-id_name
+grep '|' nr_aln_97_id > uniprot_ID
 grep "^[0-9]" lack_summary_ID>without_Textseq_ID
 awk 'BEGIN{FS=OFS="\t"}
 {
@@ -601,6 +603,7 @@ cmd | getline num
 close(cmd) 
 printf "%s\t%s\n",$0, num}' without_Textseq_ID > without_Textseq_ID_length
 
+#specify Textseq_ID
 awk 'BEGIN{FS=OFS="\t"}
 {
 cmd = "efetch -db protein -id " $0 " -format gi";
@@ -618,8 +621,8 @@ done
 echo -e "$output" | awk 'NF'
 ' > lack_summary_part1
 
-output=""
-cat with_Textseq-id_name | parallel --pipe -j 72 '
+#output=""
+#cat with_Textseq-id_name | parallel --pipe -j 72 '
 while IFS= read -r ID; 
 do
 efetch -db protein -id "$ID" -format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Textseq-id_name -equals "$ID" -element -first Textseq-id_name -block BioSource -element -first Object-id_id -block Bioseq -if Textseq-id_name -equals "$ID" -element -first  Seqdesc_title
@@ -627,9 +630,14 @@ done
 echo -e "$output" | awk 'NF'
 ' > lack_summary_part2
 
+#uniprot
+awk 'BEGIN{FS=OFS="\t"} {print "esearch -db protein -query",$1, "| efetch -format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Textseq-id_name -equals",$1," -element -first Textseq-id_name -block BioSource -element -first Object-id_id -block Bioseq -if Textseq-id_name -equals",$1," -element -first  Seqdesc_title"}' with_Textseq-id_name > with_Textseq-id_name_script
+bash with_Textseq-id_name_script > lack_summary_part2
+
 #awk 'BEGIN{FS=OFS="\t"} {print "efetch -db protein -id",$1, "-format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Seq-inst_length -equals",$2,"-element PDB-mol-id Object-id_id Seqdesc_comment"}' without_Textseq_ID_length >without_Textseq_ID_script
 #bash without_Textseq_ID_script > lack_summary_part3
 
+#PDB
 awk 'BEGIN{FS=OFS="\t"} {print "efetch -db protein -id",$1, "-format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Seq-id_gi -equals",$2,"-element PDB-mol-id Object-id_id Seqdesc_comment"}' without_Textseq_ID_gi > without_Textseq_ID_script
 bash without_Textseq_ID_script > lack_summary_part3
 cat lack_summary_part1 lack_summary_part2 lack_summary_part3 >> nr_aln_97_info
@@ -638,6 +646,7 @@ cat lack_summary_part1 lack_summary_part2 lack_summary_part3 >> nr_aln_97_info
 #do efetch -db protein -id "$acc"  -format xml| xtract -pattern Bioseq-set_seq-set -element OrgName_lineage >>tt ;
 #done< test_ID
 
+#use taxid to get taxonomy
 mamba install -c bioconda taxonkit
 wget http://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz mv taxdump.tar.gz ../../
 tar -zxf ../../taxdump.tar.gz
@@ -665,6 +674,7 @@ grep -Ff <(grep Fungi nr_aln_97_taxon | cut -f1) nr_aln_97_info > Fungi_info
 #efetch -db protein -id KAH9546190  -format xml| xtract -pattern Bioseq-set_seq-set -element OrgName_lineage 
 #efetch -db protein -id KAH9546190  -format gb | grep -e "DEFINITION"
 #efetch -db protein -id KAH9546190 -format xml | xtract -pattern Seq-id -element Textseq-id_accession
+
 -----------------------------------------combine information-------------------------------------
 #cat index_list | sed  's/^/transcript_abundance\//'| sed 's/$/\.isoforms\.results/' > isoforms_results
 #../../trinityrnaseq-v2.15.2/util/misc/merge_RSEM_output_to_matrix.pl --rsem_files  isoforms_results --mode counts > transcript_abundance/total_transcripts_counts
@@ -672,12 +682,10 @@ grep -Ff <(grep Fungi nr_aln_97_taxon | cut -f1) nr_aln_97_info > Fungi_info
 #not used
 mkdir EXPK_longest
 makeblastdb -in cd-hit-est.fasta -dbtype nucl -out EXPK_longest/EXPK_longest
-
 blastn -db EXPK_longest/EXPK_longest -query coding.fasta -out longest_mapping_aln -evalue 1e-10 -outfmt 6 -num_threads 72
-
 awk '$3==100 {print$0}' longest_mapping_aln > longest_mapping_aln_100
 
-#modified from chatgpt
+#modified from chatgpt,not used
 #output=""
 #cat cd-hit-est.clstr | parallel --pipe -j 72 '
 #while IFS= read -r line; do
@@ -695,7 +703,7 @@ awk '$3==100 {print$0}' longest_mapping_aln > longest_mapping_aln_100
 #echo -e "$output"
 #' > longest_mapping  # Save to a file
 
-#modified from chatgpt
+#modified from chatgpt,get mapping
 #!/bin/bash
 # Read the input file line by line, splitting into blocks based on lines starting with '>'
 awk '/^>/{if(NR>1)print ""; print $0; next} {print $0}' cd-hit-est.clstr | \
@@ -727,8 +735,8 @@ awk ' NR==FNR { map[$1] = $2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7; next} {print $0"\t"m
 #awk ' NR==FNR { map[$1] = $2"\t"$3"\t"$4; next} { isoform= substr($2,1,length($2) -2);
 print $0"\t"map[isoform]}' nr_aln_97_info nr_aln_97 > test
 
-#modified from chatgpt
-awk -F $'\t' '
+#modified from chatgpt,not used
+#awk -F $'\t' '
 FNR==1 { file_count++ }  # Count how many files are processed
 
 { 
@@ -751,3 +759,145 @@ printf "%s", map2[taxid]; # Print the corresponding taxon data
 }
     print "";  # Newline
 }'  nr_aln_97_info nr_aln_97_taxon nr_aln_97 > nr_taxa_info
+
+grep -vFf lack_summary_ID nr_aln_97 >nr_aln_97_part0
+grep -Ff with_Textseq_ID nr_aln_97 > nr_aln_97_part1
+grep -Ff uniprot_ID nr_aln_97 > nr_aln_97_part2
+grep -Ff without_Textseq_ID nr_aln_97 > nr_aln_97_part3
+cat nr_aln_97_part0 >> nr_aln_97_part1
+
+#modified from chatgpt
+awk -F $'\t' '
+FNR==1 { file_count++ }  # Count how many files are processed
+
+{ 
+if (file_count == 1) {
+           map1[$1][1] = $2;  # Store data from each file using file_count as an index
+map1[$1][2] = $3;  # Store data from each file using file_count as an index
+next;
+   } else if (file_count == 2) {
+map2[$1] = $2;  # Store data from each file using file_count as an index
+next;
+   }
+    printf "%s\t",$0;  # Print the current line from file1.txt
+	isoform = substr($2, 1, length($2) - 2); # Remove last 2 characters from $2
+    if (isoform in map1) { 
+taxid = map1[isoform][1]; # Get taxid from map1 
+printf "%s\t%s\t", map1[isoform][1], map1[isoform][2]; # Print taxid and info 
+if (taxid in map2) { # Check if taxid exists in map2 
+printf "%s", map2[taxid]; # Print the corresponding taxon data
+} 
+}
+    print "";  # Newline
+}'  nr_aln_97_info nr_aln_97_taxon nr_aln_97_part1 > nr_taxa_info_part1
+
+awk -F $'\t' '
+FNR==1 { file_count++ }  # Count how many files are processed
+
+{ 
+if (file_count == 1) {
+           map1[$1][1] = $2;  # Store data from each file using file_count as an index
+map1[$1][2] = $3;  # Store data from each file using file_count as an index
+next;
+   } else if (file_count == 2) {
+map2[$1] = $2;  # Store data from each file using file_count as an index
+next;
+   }
+    printf "%s\t",$0;  # Print the current line from file1.txt
+	type = substr($2, 1, 3)
+if(type == "pir"){
+isoform = substr($2, 5, length($2) - 5);
+}else if(type == "prf"){
+	isoform = substr($2, 6);
+}
+    if (isoform in map1) { 
+taxid = map1[isoform][1]; # Get taxid from map1 
+printf "%s\t%s\t", map1[isoform][1], map1[isoform][2]; # Print taxid and info 
+if (taxid in map2) { # Check if taxid exists in map2 
+printf "%s", map2[taxid]; # Print the corresponding taxon data
+} 
+}
+    print "";  # Newline
+}'  nr_aln_97_info nr_aln_97_taxon nr_aln_97_part2 > nr_taxa_info_part2
+
+awk -F $'\t' '
+FNR==1 { file_count++ }  # Count how many files are processed
+
+{ 
+if (file_count == 1) {
+           map1[$1][1] = $2;  # Store data from each file using file_count as an index
+map1[$1][2] = $3;  # Store data from each file using file_count as an index
+next;
+   } else if (file_count == 2) {
+map2[$1] = $2;  # Store data from each file using file_count as an index
+next;
+   }
+    printf "%s\t",$0;  # Print the current line from file1.txt
+	split($2,id, "_")
+	isoform = id[1];
+    if (isoform in map1) { 
+taxid = map1[isoform][1]; # Get taxid from map1 
+printf "%s\t%s\t", map1[isoform][1], map1[isoform][2]; # Print taxid and info 
+if (taxid in map2) { # Check if taxid exists in map2 
+printf "%s", map2[taxid]; # Print the corresponding taxon data
+} 
+}
+    print "";  # Newline
+}'  nr_aln_97_info nr_aln_97_taxon nr_aln_97_part3 > nr_taxa_info_part3
+
+cat nr_taxa_info_part1 nr_taxa_info_part2 nr_taxa_info_part3 > nr_taxa_info
+---------------------------------------------------Trinotate---------------------------------------------
+cd ..
+mamba install bioconda::hmmer
+mamba install bioconda::diamond
+mamba install bioconda::eggnog-mapper
+mkdir ../../eggnog_data
+download_eggnog_data.py --data_dir ../../eggnog_data -y -H -M -f
+export EGGNOG_DATA_DIR=/home/yee/eggnog_data
+
+#../../Trinotate-Trinotate-v4.0.2/Trinotate --create --db EXPK_uni.sqlite --trinotate_data_dir /home/yee/Trinotate --use_diamond
+
+#../../Trinotate-Trinotate-v4.0.2/Trinotate --db EXPK_uni.sqlite --init --transcript_fasta cd-hit-est --transdecoder_pep transdecoder/cd-hit-est.transdecoder.pep
+
+#../../Trinotate-Trinotate-v4.0.2/Trinotate --db EXPK_uni.sqlite --CPU 72 --transcript_fasta cd-hit-est --transdecoder_pep transdecoder/cd-hit-est.transdecoder.pep --trinotate_data_dir /home/yee/Trinotate --run "swissprot_blastp swissprot_blastx pfam EggnogMapper" --use_diamond 
+
+#../../Trinotate-Trinotate-v4.0.2/Trinotate --db EXPK_uni.sqlite --report > Trinotate_report_uni.tsv
+
+
+../../Trinotate-Trinotate-v4.0.2/Trinotate --create --db EXPK_longest.sqlite --trinotate_data_dir /home/yee/Trinotate --use_diamond
+
+awk '/^>/{if(NR>1)print ""; print $0; next} {print $0}' cd-hit-est.clstr | \
+    parallel --pipe --recend '\n\n' -j 72 '  # Process in parallel
+    awk -F "[>.]" "
+    { 
+isoform = substr(\$2,1,length(\$2) )
+if (substr(\$1,1,1) == 0) {
+gene = isoform  # First line of each block
+print gene \"\t\" isoform
+    	} else if (substr(\$1,1,1) != 0 && substr(\$1,1,1)!= \"\") {
+print gene \"\t\" isoform
+}
+    }"' > longest_mapping.gene_trans_map
+
+../../Trinotate-Trinotate-v4.0.2/Trinotate --db EXPK_longest.sqlite --init --transcript_fasta cd-hit-est.fasta --gene_trans_map longest_mapping.gene_trans_map --transdecoder_pep transdecoder/cd-hit-est.fasta.transdecoder.pep
+
+../../Trinotate-Trinotate-v4.0.2/Trinotate --db EXPK_longest.sqlite --CPU 72 --transcript_fasta cd-hit-est.fasta --transdecoder_pep transdecoder/cd-hit-est.fasta.transdecoder.pep --trinotate_data_dir /home/yee/Trinotate --run "swissprot_blastp swissprot_blastx pfam EggnogMapper" --use_diamond 
+
+../../Trinotate-Trinotate-v4.0.2/Trinotate --db EXPK_longest.sqlite --report > Trinotate_report_longest.tsv
+
+pip3 install pybiolib
+pip install docker
+cd 
+curl -fsSL https://get.docker.com/rootless | sh
+systemctl --user start docker.service
+export PATH=/home/yee/bin:$PATH
+export DOCKER_HOST=unix:///run/user/1004/docker.sock
+cd /home/yee/EXPK/analysis
+biolib run --local 'DTU/DeepTMHMM:1.0.24' --fasta cd-hit-est
+cd
+tar -zxf signalp-6.0h.slow_sequential.tar.gz
+cd signalp6_slow_sequential/
+SIGNALP_DIR=$(python3 -c "import signalp; import os; print(os.path.dirname(signalp.__file__))" )
+cp -r signalp-6-package/models/* $SIGNALP_DIR/model_weights/
+cd /home/yee/EXPK/analysis/
+signalp6 --fastafile cd-hit-est --output_dir signalp6 --mode slow-sequential --torch_num_threads 72
