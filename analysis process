@@ -885,6 +885,7 @@ print gene \"\t\" isoform
 
 ../../Trinotate-Trinotate-v4.0.2/Trinotate --db EXPK_longest.sqlite --report > Trinotate_report_longest.tsv
 
+cat trinity/*_re.fasta > all_transcripts.fasta
 pip3 install pybiolib
 pip install docker
 cd 
@@ -901,3 +902,121 @@ SIGNALP_DIR=$(python3 -c "import signalp; import os; print(os.path.dirname(signa
 cp -r signalp-6-package/models/* $SIGNALP_DIR/model_weights/
 cd /home/yee/EXPK/analysis/
 signalp6 --fastafile cd-hit-est --output_dir signalp6 --mode slow-sequential --torch_num_threads 72
+
+------------------estimate cd—hit-est abundance---------------
+mkdir longest
+
+while IFS= read -r line;
+do 
+../../trinityrnaseq-v2.15.2/util/align_and_estimate_abundance.pl --thread_count 72 --seqType fq --left ../ExpKRNA/paired/"$line"_R1_paired.fastq.gz --right ../ExpKRNA/paired/"$line"_R2_paired.fastq.gz --transcripts cd-hit-est --est_method RSEM --aln_method bowtie  --trinity_mode --prep_reference --output_dir ./longest --output_prefix "$line"; 
+done<index_list
+
+../../trinityrnaseq-v2.15.2/util/abundance_estimates_to_matrix.pl --est_method RSEM --gene_trans_map none --quant_files longest_genes.results_list
+
+#grep -A1 --no-group-separator "K10-K9" cd-hit-est >test
+
+-----------------------------------------------------DEseq2-------------------------------------------------
+#ls longest | grep "genes.results"| sed 's/^/longest\//'> longest_genes.results_list
+
+#../../trinityrnaseq-v2.15.2/util/misc/merge_RSEM_output_to_matrix.pl --rsem_files longest_genes.results_list --mode counts>longest_count_matrix
+
+#R
+install.packages("DESeq2")
+library(DESeq2)
+library(readr)
+BiocManager::install("tximport")
+
+sed -ie 's/F\([12]\)/F\1_22CWMVLT4/g' ExpK_experiment_design.tsv
+sed -ie 's/-/_/g' ExpK_experiment_design.tsv
+cut -f1,2 ExpK_experiment_design.tsv | awk '{print $2"\t"$1}'| tail -n+2 > pass_hold
+cut -f1,3 ExpK_experiment_design.tsv | awk '{print $2"\t"$1}'| tail -n+2 > CueifongLake_Tsaopi
+cut -f1,4 ExpK_experiment_design.tsv | awk '{print $2"\t"$1}'| tail -n+2 > HIGH_LOW
+
+mkdir DESeq2
+mkdir DESeq2/pass_hold
+mkdir DESeq2/CueifongLake_Tsaopi
+mkdir DESeq2/HIGH_LOW  
+mkdir DESeq2/fungi
+mkdir DESeq2/fungi/pass_hold DESeq2/fungi/CueifongLake_Tsaopi DESeq2/fungi/HIGH_LOW
+mkdir DESeq2/sphagnum
+mkdir DESeq2/sphagnum/pass_hold DESeq2/sphagnum/CueifongLake_Tsaopi DESeq2/sphagnum/HIGH_LOW
+
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix longest_count_matrix.matrix --method DESeq2 --samples_file pass_hold --output DESeq2/pass_hold
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix longest_count_matrix --method DESeq2 --samples_file CueifongLake_Tsaopi --output DESeq2/CueifongLake_Tsaopi
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix longest_count_matrix --method DESeq2 --samples_file HIGH_LOW --output DESeq2/HIGH_LOW
+
+../../Trinotate-Trinotate-v4.0.2/util/extract_GO_assignments_from_Trinotate_xls.pl --Trinotate_xls Trinotate_report_longest.tsv --gene --include_ancestral_terms > go_annotations.txt
+
+cd DESeq2/pass_hold
+../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix longest_count_matrix.Hold_vs_Pass.DESeq2.count_matrix  -P 1e-3 -C 2
+
+cd ../CueifongLake_Tsaopi
+../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix longest_count_matrix.CueifongLake_vs_Tsaopi.DESeq2.count_matrix  -P 1e-3 -C 2
+
+cd ../HIGH_LOW
+../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix longest_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2
+
+grep 'Sphagnum' nr_taxa_info | cut -f1,2,14,15 >Sphagnum_info
+grep -A1 -Ff <(grep 'Sphagnum' nr_taxa_info | cut -f1) cd-hit-est > Sphagnum.fasta
+grep 'Fungi' nr_taxa_info | cut -f1,2,14,15 >Fungi_info
+grep -A1 -Ff <(grep 'Fungi' nr_taxa_info | cut -f1) cd-hit-est > Fungi.fasta
+
+grep ">" Fungi.fasta | awk -F "[>i]" "{print \$(NF-1)}" | rev | cut -c2- | rev > Fungi_gene
+grep ">" Sphagnum.fasta | awk -F "[>i]" "{print \$(NF-1)}" | rev | cut -c2- | rev > Sphagnum_gene
+cat longest_count_matrix | head -n1 > Fungi_count_matrix 
+grep -Ff Fungi_gene longest_count_matrix >> Fungi_count_matrix
+cat longest_count_matrix | head -n1 > Sphagnum_count_matrix 
+grep -Ff Sphagnum_gene longest_count_matrix >> Sphagnum_count_matrix
+
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Fungi_count_matrix --method DESeq2 --samples_file pass_hold --output DESeq2/fungi/pass_hold
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Fungi_count_matrix --method DESeq2 --samples_file CueifongLake_Tsaopi --output DESeq2/fungi/CueifongLake_Tsaopi
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Fungi_count_matrix --method DESeq2 --samples_file HIGH_LOW --output DESeq2/fungi/HIGH_LOW
+
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Sphagnum_count_matrix --method DESeq2 --samples_file pass_hold --output DESeq2/sphagnum/pass_hold
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Sphagnum_count_matrix --method DESeq2 --samples_file CueifongLake_Tsaopi --output DESeq2/sphagnum/CueifongLake_Tsaopi
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Sphagnum_count_matrix --method DESeq2 --samples_file HIGH_LOW --output DESeq2/sphagnum/HIGH_LOW
+
+cd DESeq2/fungi/pass_hold
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Fungi_count_matrix.Hold_vs_Pass.DESeq2.count_matrix  -P 1e-3 -C 2
+cd ../CueifongLake_Tsaopi
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Fungi_count_matrix.CueifongLake_vs_Tsaopi.DESeq2.count_matrix -P 1e-3 -C 2
+cd ../HIGH_LOW
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Fungi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2
+cd ../../sphagnum/pass_hold
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Sphagnum_count_matrix.Hold_vs_Pass.DESeq2.count_matrix  -P 1e-3 -C 2
+cd ../CueifongLake_Tsaopi
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Sphagnum_count_matrix.CueifongLake_vs_Tsaopi.DESeq2.count_matrix -P 1e-3 -C 2
+cd ../HIGH_LOW
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Sphagnum_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2
+
+#../../trinityrnaseq-v2.15.2/util/abundance_estimates_to_matrix.pl --est_method RSEM --gene_trans_map none --quant_files longest_genes.results_list
+
+#../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix RSEM.isoform.TMM.EXPR.matrix --method DESeq2 --samples_file pass_hold --output DESeq2/pass_hold
+
+
+cut -f1 Fungi_info > Fungi_gene_ID
+cut -f1 Sphagnum_info > Sphagnum_gene_ID
+grep 'Fungi' Trinotate_report_longest.tsv | cut -f1 > Fungi_Trinotate_ID
+grep 'Sphagnum' Trinotate_report_longest.tsv | cut -f1 > Sphagnum_ID_Trinotate_ID
+
+grep -Ff Sphagnum_gene_ID Sphagnum_ID_Trinotate_ID > Sphagnum_ID_Trinotate_ID_check
+grep -Ff Sphagnum_ID_Trinotate_ID_check Trinotate_report_longest.tsv | grep -v 'Sphagnum' | cut -f1 | sort | uniq > Sphagnum_ID_Trinotate_ID_check_multi
+grep -vFf Sphagnum_gene_ID Sphagnum_ID_Trinotate_ID> Sphagnum_lowQ
+grep -vFf Sphagnum_ID_Trinotate_ID Sphagnum_gene_ID | sort | uniq > Sphagnum_onlynr 
+grep -Ff Sphagnum_onlynr nr_taxa_info | grep -v 'Sphagnum'| cut -f1 | sort | uniq > Sphagnum_onlynr_multi
+grep -vFf Sphagnum_onlynr_multi Sphagnum_onlynr | sort | uniq > Sphagnum_onlynr_only
+
+grep -Ff Fungi_gene Fungi_Trinotate_ID > Fungi_Trinotate_ID_check
+grep -Ff Fungi_Trinotate_ID_check Trinotate_report_longest.tsv | grep -v 'Fungi' | cut -f1 | sort | uniq > Fungi_Trinotate_ID_check_multi
+grep -Ff Fungi_Trinotate_ID_check nr_taxa_info| grep -v 'Fungi' | cut -f1 | sort | uniq >> Fungi_Trinotate_ID_check_multi
+sort Fungi_Trinotate_ID_check_multi | uniq > tmp
+mv tmp Fungi_Trinotate_ID_check_multi
+grep -vFf Fungi_Trinotate_ID_check_multi Fungi_Trinotate_ID_check | sort | uniq > Fungi_Trinotate_ID_check_only
+grep -vFf Fungi_gene_ID Fungi_Trinotate_ID> Fungi_lowQ
+
+grep -vFf Fungi_Trinotate_ID Fungi_gene_ID | sort | uniq > Fungi_onlynr 
+grep -Ff Fungi_onlynr nr_taxa_info | grep -v 'Fungi'| cut -f1 | sort | uniq > Fungi_onlynr_multi
+grep -vFf Fungi_onlynr_multi Fungi_onlynr | sort | uniq > Fungi_onlynr_only
+
+cat Fungi_gene_ID Fungi_Trinotate_ID | sort | uniq > Fungi_ID_all
+cat Sphagnum_gene_ID Sphagnum_Trinotate_ID | sort | uniq > Sphagnum_ID_all
