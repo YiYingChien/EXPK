@@ -993,7 +993,8 @@ cd ../HIGH_LOW
 
 #../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix RSEM.isoform.TMM.EXPR.matrix --method DESeq2 --samples_file pass_hold --output DESeq2/pass_hold
 
-
+#####not use
+awk '($3+0)<= 1e-10 && $9 >= 97 {print $0}' eggnog_mapper.emapper.seed_orthologs | grep -P "^K" | cut -f1 | rev | cut -c4- | rev > Trinotate_qualified_ID
 cut -f1 Fungi_info > Fungi_gene_ID
 cut -f1 Sphagnum_info > Sphagnum_gene_ID
 grep 'Fungi' Trinotate_report_longest.tsv | cut -f1 > Fungi_Trinotate_ID
@@ -1020,3 +1021,176 @@ grep -vFf Fungi_onlynr_multi Fungi_onlynr | sort | uniq > Fungi_onlynr_only
 
 cat Fungi_gene_ID Fungi_Trinotate_ID | sort | uniq > Fungi_ID_all
 cat Sphagnum_gene_ID Sphagnum_Trinotate_ID | sort | uniq > Sphagnum_ID_all
+
+######
+
+grep 'Embryophyta' nr_taxa_info >plant_info
+cut -f1 plant_info > plant_gene_ID
+grep 'Embryophyta' Trinotate_report_longest.tsv | cut -f1 > plant_Trinotate_ID
+grep 'Fungi' nr_taxa_info > Fungi_info
+cut -f1 Fungi_info > Fungi_gene_ID
+grep ' Fungi' Trinotate_report_longest.tsv | cut -f1 > Fungi_Trinotate_ID
+grep -A1 -Ff plant_gene_ID cd-hit-est > plant.fasta
+grep -A1 -Ff Fungi_gene_ID cd-hit-est > Fungi.fasta
+cat Fungi_gene_ID Fungi_Trinotate_ID | sort | uniq > Fungi_ID_all
+cat plant_gene_ID plant_Trinotate_ID | sort | uniq > plant_ID_all
+cut -d 'i' -f1 Fungi_ID_all | rev | cut -c2- | rev > Fungi_gene
+cut -d 'i' -f1 plant_ID_all | rev | cut -c2- | rev > plant_gene
+
+cat longest_count_matrix | head -n1 > Fungi_count_matrix 
+grep -Ff Fungi_gene longest_count_matrix >> Fungi_count_matrix
+cat longest_count_matrix | head -n1 > plant_count_matrix 
+grep -Ff plant_gene longest_count_matrix >> plant_count_matrix
+
+mkdir plant
+mkdir plant/CueifongLake plant/Tsaopi
+rm -r fungi
+mkdir fungi
+mkdir fungi/CueifongLake fungi/Tsaopi
+
+grep -P '\t1|\t2|\t3|\t4' ExpK_experiment_design.tsv | awk '{print $4"\t"$1}'> CueifongLake
+grep -P '\t5|\t6|\t7' ExpK_experiment_design.tsv | awk '{print $4"\t"$1}'> Tsaopi
+awk '{ORS=","} NR==FNR{a[$0]; next} {for(i=1;i<=NF;i++) if($i in a) print FNR}' <(cut -f2 CueifongLake) <(head -n1 Fungi_count_matrix | tr '\t' '\n')
+awk '{ORS=","} NR==FNR{a[$0]; next} {for(i=1;i<=NF;i++) if($i in a) print FNR}' <(cut -f2 Tsaopi) <(head -n1 Fungi_count_matrix | tr '\t' '\n')
+cut -f 1,2,3,5,11,12,13,14,15,16,17,18,21 Fungi_count_matrix >Fungi_CueifongLake_count_matrix
+cut -f 1,4,6,7,8,9,10,19,20,22,23,24,25 Fungi_count_matrix > Fungi_Tsaopi_count_matrix
+cut -f 1,2,3,5,11,12,13,14,15,16,17,18,21 plant_count_matrix >plant_CueifongLake_count_matrix
+cut -f 1,4,6,7,8,9,10,19,20,22,23,24,25 plant_count_matrix > plant_Tsaopi_count_matrix
+
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Fungi_CueifongLake_count_matrix --method DESeq2 --samples_file CueifongLake --output DESeq2/fungi/CueifongLake
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix Fungi_Tsaopi_count_matrix --method DESeq2 --samples_file Tsaopi --output DESeq2/fungi/Tsaopi
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix plant_CueifongLake_count_matrix --method DESeq2 --samples_file CueifongLake --output DESeq2/plant/CueifongLake
+../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/run_DE_analysis.pl --matrix plant_Tsaopi_count_matrix --method DESeq2 --samples_file Tsaopi --output DESeq2/plant/Tsaopi
+
+cd DESeq2/fungi/CueifongLake
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2 --examine_GO_enrichment --GO_annots ../../../go_annotations.txt --gene_lengths ../../../seq_length
+
+cd ../Tsaopi/
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2 --examine_GO_enrichment --GO_annots ../../../go_annotations.txt --gene_lengths ../../../seq_length
+
+cd ../../plant/CueifongLake/
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2 --examine_GO_enrichment --GO_annots ../../../go_annotations.txt --gene_lengths ../../../seq_length
+
+cd ../Tsaopi/
+../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2 --examine_GO_enrichment --GO_annots ../../../go_annotations.txt --gene_lengths ../../../seq_length
+
+cd ../../../
+cut -f1 DESeq2/fungi/CueifongLake/Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset | tail  -n+2 > Fungi_HIGH_gene
+cut -f1 DESeq2/fungi/Tsaopi/Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset | tail  -n+2 >> Fungi_HIGH_gene
+sort Fungi_HIGH_gene | uniq > tmp
+mv tmp Fungi_HIGH_gene
+
+cut -f1 DESeq2/fungi/CueifongLake/Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset | tail  -n+2 > Fungi_LOW_gene
+cut -f1 DESeq2/fungi/Tsaopi/Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset | tail  -n+2 >> Fungi_LOW_gene
+sort Fungi_LOW_gene | uniq >tmp
+mv tmp Fungi_LOW_gene
+
+cut -f1 DESeq2/plant/CueifongLake/plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset | tail  -n+2 > plant_HIGH_gene
+cut -f1 DESeq2/plant/Tsaopi/plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset | tail  -n+2 >> plant_HIGH_gene
+sort plant_HIGH_gene | uniq > tmp
+mv tmp plant_HIGH_gene
+
+cut -f1 DESeq2/plant/CueifongLake/plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset | tail  -n+2 > plant_LOW_gene
+cut -f1 DESeq2/plant/Tsaopi/plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset | tail  -n+2 >> plant_LOW_gene
+sort plant_LOW_gene | uniq >tmp
+mv tmp plant_LOW_gene
+
+cat <(tail -n+2 DESeq2/fungi/CueifongLake/Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset ) <(tail -n+2 DESeq2/fungi/Tsaopi/Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset) | cut -f1  | sort | uniq -d > Fungi_HIGH_gene_common
+
+cat <(tail -n+2 DESeq2/fungi/CueifongLake/Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset ) <(tail -n+2 DESeq2/fungi/Tsaopi/Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset) | cut -f1  | sort | uniq -d > Fungi_LOW_gene_common
+
+cat <(tail -n+2 DESeq2/plant/CueifongLake/plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset ) <(tail -n+2 DESeq2/plant/Tsaopi/plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset) | cut -f1  | sort | uniq -d > plant_HIGH_gene_common
+
+cat <(tail -n+2 DESeq2/plant/CueifongLake/plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset ) <(tail -n+2 DESeq2/plant/Tsaopi/plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset) | cut -f1  | sort | uniq -d > plant_LOW_gene_common
+
+#common
+#Fungi_HIGH: hypothetical protein(lack),q(Tr)
+#Fungi_LOW: hypothetical protein, ubiquitin, uncharacterized protein (nr),…(Tr), hypothetical protein, ubiquitin, uncharacterized protein(lack)
+#plant_HIGH: hypothetical protein(nr),reqtrovirus transposon, enolase…(Tr), solute transporter(Tr) …, hypothetical protein(lack)
+#plant_LOW: ubiquitin(nr),…(Tr), hypothetical protein, ubiquitin, uncharacterized protein, ribosomal protein,tubulin(lack)
+#Fungi_CueifongLake_HIGH:12
+#Fungi_CueifongLake_LOW:495
+#Fungi_Tsaopi_HIGH:9
+#Fungi_Tsaopi_LOW:364
+#plant_CueifongLake_HIGH:577
+#plant_CueifongLake_LOW:1510
+#plant_Tsaopi_HIGH:220
+#plant_Tsaopi_LOW:232
+
+#Fungi_Tsaopi:30363 
+#Fungi_CueifongLake:38933 
+#plant_CueifongLake:185840 
+#plant_Tsaopi:184462
+
+grep -vFf <(grep -Ff Fungi_HIGH_gene nr_taxa_info | cut -f1 | sort | uniq | cut -d 'i' -f1 | rev | cut -c2- | rev) Fungi_HIGH_gene > Fungi_HIGH_DEG_lack_nr_info
+grep -vFf <(grep -Ff Fungi_LOW_gene nr_taxa_info | cut -f1 | sort | uniq | cut -d 'i' -f1 | rev | cut -c2- | rev) Fungi_LOW_gene > Fungi_LOW_DEG_lack_nr_info
+grep -vFf <(grep -Ff plant_HIGH_gene nr_taxa_info | cut -f1 | sort | uniq | cut -d 'i' -f1 | rev | cut -c2- | rev) plant_HIGH_gene > plant_HIGH_DEG_lack_nr_info
+grep -vFf <(grep -Ff plant_LOW_gene nr_taxa_info | cut -f1 | sort | uniq | cut -d 'i' -f1 | rev | cut -c2- | rev) plant_LOW_gene > plant_LOW_DEG_lack_nr_info
+
+grep -Ff <(cat Fungi_HIGH_DEG_lack_nr_info Fungi_LOW_DEG_lack_nr_info plant_HIGH_DEG_lack_nr_info plant_LOW_DEG_lack_nr_info) nr_aln | cut -f2 | sort | uniq > DEG_lack_info_id
+
+grep '\.' DEG_lack_info_id > DEG_lack_info_id_part1
+grep '|' DEG_lack_info_id | awk -F "[|]" '{if(substr($1,1,3)=="pir"){print $2} else if(substr($1,1,3)=="prf"){print $3}}'>DEG_lack_info_id_part2
+grep "^[0-9]" DEG_lack_info_id > DEG_lack_info_id_part3
+
+esummary -db protein -input DEG_lack_info_id_part1 | xtract -pattern DocumentSummary -element Caption, TaxId, Title > DEG_lack_info
+
+grep -vFf <(cut -f1 DEG_lack_info) DEG_lack_info_id_part1 | cut -d "." -f1 >DEG_lack_info_id_lack_summary
+
+while IFS= read -r ID;  do efetch -db protein -id "$ID" -format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Textseq-id_accession -equals "$ID" -element -first Textseq-id_accession -block BioSource -element -first Object-id_id -block Bioseq -if Textseq-id_accession -equals "$ID" -element -first  Seqdesc_title  >> DEG_lack_info_part1; done<DEG_lack_info_id_lack_summary
+
+awk 'BEGIN{FS=OFS="\t"} {print "esearch -db protein -query",$1, "| efetch -format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Textseq-id_name -equals",$1," -element -first Textseq-id_name -block BioSource -element -first Object-id_id -block Bioseq -if Textseq-id_name -equals",$1," -element -first  Seqdesc_title"}' DEG_lack_info_id_part2 > DEG_lack_info_id_part2_script
+bash DEG_lack_info_id_part2_script > DEG_lack_info_part2
+
+awk 'BEGIN{FS=OFS="\t"}
+{
+cmd = "efetch -db protein -id " $0 " -format gi";
+cmd | getline gi
+close(cmd) 
+printf "%s\t%s\n",$0, gi}' DEG_lack_info_id_part3 > DEG_lack_info_id_part3_gi
+
+awk 'BEGIN{FS=OFS="\t"} {print "efetch -db protein -id",$1, "-format xml | xtract -pattern Bioseq-set_seq-set -block Bioseq -if Seq-id_gi -equals",$2,"-element PDB-mol-id Object-id_id Seqdesc_comment"}' DEG_lack_info_id_part3_gi > DEG_lack_info_part3_script
+bash DEG_lack_info_part3_script > DEG_lack_info_part3
+
+cat DEG_lack_info_part1 DEG_lack_info_part2 DEG_lack_info_part3 >> DEG_lack_info
+
+cut -f2 DEG_lack_info | sort | uniq >  DEG_lack_info_taxid
+taxonkit --data-dir /home/yee lineage DEG_lack_info_taxid > DEG_lack_info_taxon
+
+03:05:49.028 [WARN] taxid 3402493 not found
+03:05:49.028 [WARN] taxid 3416354 not found
+
+#3402493
+#cellular organisms; Eukaryota; Opisthokonta; Metazoa; Eumetazoa; Bilateria; Protostomia; Ecdysozoa; Panarthropoda; Arthropoda; Mandibulata; Pancrustacea; Hexapoda; Insecta; Dicondylia; Pterygota; Neoptera; Endopterygota; Coleoptera; Polyphaga; Cucujiformia; Chrysomeloidea; Chrysomelidae; Galerucinae; Alticini; Psylliodes
+
+#3416354
+#cellular organisms; Bacteria; Pseudomonadati; FCB group; Bacteroidota/Chlorobiota group; Bacteroidota; Bacteroidia; Candidatus Pollutiaquabacterales; Candidatus Pollutiaquabacteraceae; Candidatus Pollutiaquabacter; unclassified Candidatus Pollutiaquabacter
+sed -ie "s/3402493\t/3402493\tcellular organisms;Eukaryota;Opisthokonta;Metazoa;Eumetazoa;Bilateria; Protostomia;Ecdysozoa;Panarthropoda;Arthropoda;Mandibulata;Pancrustacea;Hexapoda;Insecta;Dicondylia;Pterygota;Neoptera;Endopterygota;Coleoptera;Polyphaga;Cucujiformia;Chrysomeloidea;Chrysomelidae;Galerucinae;Alticini;Psylliodes/" DEG_lack_info_taxon
+
+sed -ie "s/3416354\t/3416354\tcellular organisms;Bacteria;Pseudomonadati;FCB group;Bacteroidota\/Chlorobiota group;Bacteroidota;Bacteroidia;Candidatus Pollutiaquabacterales;Candidatus Pollutiaquabacteraceae;Candidatus Pollutiaquabacter;unclassified Candidatus Pollutiaquabacter/" DEG_lack_info_taxon
+
+grep -Ff DEG_lack_info_id nr_aln > DEG_lack_info_aln
+
+awk -F $'\t' '
+FNR==1 { file_count++ }  # Count how many files are processed
+
+{ 
+if (file_count == 1) {
+           map1[$1][1] = $2;  # Store data from each file using file_count as an index
+map1[$1][2] = $3;  # Store data from each file using file_count as an index
+next;
+   } else if (file_count == 2) {
+map2[$1] = $2;  # Store data from each file using file_count as an index
+next;
+   }
+    printf "%s\t",$0;  # Print the current line from file1.txt
+	isoform = substr($2, 1, length($2) - 2); # Remove last 2 characters from $2
+    if (isoform in map1) { 
+taxid = map1[isoform][1]; # Get taxid from map1 
+printf "%s\t%s\t", map1[isoform][1], map1[isoform][2]; # Print taxid and info 
+if (taxid in map2) { # Check if taxid exists in map2 
+printf "%s", map2[taxid]; # Print the corresponding taxon data
+} 
+}
+    print "";  # Newline
+}' DEG_lack_info DEG_lack_info_taxon DEG_lack_info_aln > DEG_lack_taxa_info
