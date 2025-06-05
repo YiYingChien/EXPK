@@ -916,9 +916,9 @@ done<index_list
 #grep -A1 --no-group-separator "K10-K9" cd-hit-est >test
 
 -----------------------------------------------------DEseq2-------------------------------------------------
-#ls longest | grep "genes.results"| sed 's/^/longest\//'> longest_genes.results_list
+ls longest | grep "genes.results"| sed 's/^/longest\//'> longest_genes.results_list
 
-#../../trinityrnaseq-v2.15.2/util/misc/merge_RSEM_output_to_matrix.pl --rsem_files longest_genes.results_list --mode counts>longest_count_matrix
+../../trinityrnaseq-v2.15.2/util/misc/merge_RSEM_output_to_matrix.pl --rsem_files longest_genes.results_list --mode counts>longest_count_matrix
 
 #R
 install.packages("DESeq2")
@@ -1074,6 +1074,49 @@ cd ../../plant/CueifongLake/
 cd ../Tsaopi/
 ../../../../../trinityrnaseq-v2.15.2/Analysis/DifferentialExpression/analyze_diff_expr.pl --matrix plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix  -P 1e-3 -C 2 --examine_GO_enrichment --GO_annots ../../../go_annotations.txt --gene_lengths ../../../seq_length
 
+#no information GO ID in GO.db
+grep "none" DESeq2/plant/Tsaopi/*.GOseq.depleted | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >go_replace.txt
+grep "none" DESeq2/plant/Tsaopi/*.GOseq.enriched | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >>go_replace.txt
+grep "none" DESeq2/plant/CueifongLake/*.GOseq.depleted | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >>go_replace.txt
+grep "none" DESeq2/plant/CueifongLake/*.GOseq.enriched | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >>go_replace.txt
+grep "none" DESeq2/fungi/Tsaopi/*.GOseq.depleted | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >>go_replace.txt
+grep "none" DESeq2/fungi/Tsaopi/*.GOseq.enriched | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >>go_replace.txt
+grep "none" DESeq2/fungi/CueifongLake/*.GOseq.depleted | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >>go_replace.txt
+grep "none" DESeq2/fungi/CueifongLake/*.GOseq.enriched | awk -F "[\t:]" '{print $3}' | sed 's/^/GO:/' >>go_replace.txt
+cat go_replace.txt | sort | uniq > tmp
+mv tmp  go_replace.txt
+
+#!/bin/bash
+
+INPUT="go_replace.txt"
+OUTPUT="go_term_checked"
+
+while read -r go_id; do
+    # 查詢 API
+    response=$(curl -s -H "Accept: application/json" \
+        "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/${go_id}/complete")
+
+    # 檢查是否成功回傳資料
+    if echo "$response" | jq -e '.results[0]' > /dev/null 2>&1; then
+replacement=$(echo "$response" | jq -r '.results[0].replacements[0].id')
+id=$(echo "$response" | jq -r '.results[0].id')
+if [ "$id" == "$go_id" ]; then
+echo -e "${go_id}\t${replacement}" >> "$OUTPUT"
+else
+echo -e "${go_id}\t${id}" >> "$OUTPUT"
+fi
+    else
+        echo -e "${go_id}\tN/A" >> "$OUTPUT"
+    fi
+done < "$INPUT"
+
+grep -v "null" go_term_checked > go_replace_rule
+while IFS=$'\t' read -r target replace;
+do 
+	sed -i "s/${target}/${replace}/g" go_annotations.txt;
+	sed -i "s/,${replace}//2" go_annotations.txt;
+done< go_replace_rule
+
 cd ../../../
 cut -f1 DESeq2/fungi/CueifongLake/Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset | tail  -n+2 > Fungi_HIGH_gene
 cut -f1 DESeq2/fungi/Tsaopi/Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset | tail  -n+2 >> Fungi_HIGH_gene
@@ -1194,3 +1237,218 @@ printf "%s", map2[taxid]; # Print the corresponding taxon data
 }
     print "";  # Newline
 }' DEG_lack_info DEG_lack_info_taxon DEG_lack_info_aln > DEG_lack_taxa_info
+
+-----------------------------------------------KEGGseq---------------------------------------------------
+cut -f1,26 Trinotate_report_longest.tsv | tail -n+2 | sed -e 's/_i[0-9]*\t/\t/' -e 's/ko://g' | grep -vP "\t.$"| awk '
+{
+    split($2, KOID, /[,]/)              
+    for (i in KOID) {
+        if (KOID[i] != "") {
+            key = $1
+            val = KOID[i]
+            if (!(val in seen[key])) {
+                seen[key][val] = 1
+                KEGG[key] = KEGG[key] ? KEGG[key] "," val : val
+            }                                                  
+        }                                                      
+    }        
+}        
+END {
+    for (k in KEGG){
+        print k "\t" KEGG[k]
+    }                       
+}                    
+'> KEGG_annotations.txt
+
+#modified from trinity run_Goseq.pl
+cd DESeq2/plant/Tsaopi
+perl ../../../run_KEGGseq.pl --genes_single_factor plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../CueifongLake
+perl ../../../run_KEGGseq.pl --genes_single_factor plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../../fungi/CueifongLake
+perl ../../../run_KEGGseq.pl --genes_single_factor Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../Tsaopi
+perl ../../../run_KEGGseq.pl --genes_single_factor Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_KEGGseq.pl --genes_single_factor Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --KEGG_assignments ../../../KEGG_annotations.txt --lengths ../../../seq_length --background Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../../../
+---------------------------------------------pathwayseq-----------------------------------------------
+#cut -f1,27 Trinotate_report_longest.tsv | tail -n+2 | sed 's/_i[0-9]*\t/\t/'| grep -vP "\t.$"| awk -F',' '{half=NF/2; for (i=1;i<=half;i++){printf "%s",$i; if(i < half){printf ","}} printf "\n"}' > pathway_annotations.txt
+
+cut -f1,27 Trinotate_report_longest.tsv | tail -n+2 | sed -e 's/_i[0-9]*\t/\t/' -e 's/ko/map/g'| grep -vP "\t.$"| awk '
+{
+    split($2, mapid, /[,]/)              
+    for (i in mapid) {
+        if (mapid[i] != "") {
+            key = $1
+            val = mapid[i]
+            if (!(val in seen[key])) {
+                seen[key][val] = 1
+                pathway[key] = pathway[key] ? pathway[key] "," val : val
+            }                                                  
+        }                                                      
+    }        
+}        
+END {
+    for (k in pathway){
+        print k "\t" pathway[k]
+    }                       
+}                    
+' > pathway_annotations.txt
+
+#map01130 Deleted; merged into 01110
+sed -ie 's/map01130/map01110/g' pathway_annotations.txt 
+sed -ie 's/,map01110//2' pathway_annotations.txt
+
+#map00472 Deleted; merged into 00470
+sed -ie 's/map00472/map00470/g' pathway_annotations.txt
+
+#modified from trinity run_Goseq.pl
+cd DESeq2/plant/Tsaopi
+perl ../../../run_pathwayseq.pl --genes_single_factor plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background plant_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../CueifongLake
+perl ../../../run_pathwayseq.pl --genes_single_factor plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background plant_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../../fungi/CueifongLake
+perl ../../../run_pathwayseq.pl --genes_single_factor Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background Fungi_CueifongLake_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../Tsaopi
+perl ../../../run_pathwayseq.pl --genes_single_factor Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.DE.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.HIGH-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+perl ../../../run_pathwayseq.pl --genes_single_factor Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.DE_results.P1e-3_C2.LOW-UP.subset --pathway_assignments ../../../pathway_annotations.txt --lengths ../../../seq_length --background Fungi_Tsaopi_count_matrix.HIGH_vs_LOW.DESeq2.count_matrix
+
+cd ../../../
+
+----------------------------------------------------------PCA-----------------------------------------------
+###
+#R
+#experiment_design<-read.table("ExpK_experiment_design.tsv",header=T,row.names=1)
+install.packages("ggbiplot")
+
+library(ggbiplot)
+library(edgeR)
+library(DESeq2)
+data = read.table("/home/yee/EXPK/analysis/Fungi_CueifongLake_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(3,4,12,2,9,1,5,6,7,11,8,10)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+vsd <- vst(ddsFullCountTable)
+vsd_matrix<-assay(vsd)
+Fungi_C_PCA<-prcomp(vsd_matrix)
+
+ggplot(Fungi_C_PCA$x[,1:2], aes(x = PC1, y = PC2)) +geom_point(alpha = 0.5)+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()
+ggsave("Fungi_CueifongLake_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/Fungi_Tsaopi_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,6,4,3,5,8,7,11,10,9,12)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+vsd <- vst(ddsFullCountTable)
+vsd_matrix<-assay(vsd)
+Fungi_T_PCA<-prcomp(vsd_matrix)
+
+ggplot(Fungi_T_PCA$x[,1:2], aes(x = PC1, y = PC2)) +geom_point(alpha = 0.5)+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()
+ggsave("Fungi_Tsaopi_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/plant_CueifongLake_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(3,4,12,2,9,1,5,6,7,11,8,10)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+vsd <- vst(ddsFullCountTable)
+vsd_matrix<-assay(vsd)
+plant_C_PCA<-prcomp(vsd_matrix)
+
+ggplot(plant_C_PCA$x[,1:2], aes(x = PC1, y = PC2)) +geom_point(alpha = 0.5)+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()
+ggsave("plant_CueifongLake_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/plant_Tsaopi_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,6,4,3,5,8,7,11,10,9,12)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+vsd <- vst(ddsFullCountTable)
+vsd_matrix<-assay(vsd)
+plant_T_PCA<-prcomp(vsd_matrix)
+
+ggplot(plant_T_PCA$x[,1:2], aes(x = PC1, y = PC2)) +geom_point(alpha = 0.5)+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()
+ggsave("plant_Tsaopi_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/longest_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,3,4,19,24,9,10,11,12,22,23,5,6,7,8,20,21,13,14,15,16,17,18)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("CueifongLake_HIGH", 6), rep("CueifongLake_LOW", 6), rep("Tsaopi_HIGH", 6), rep("Tsaopi_LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+vsd <- vst(ddsFullCountTable)
+vsd_matrix<-assay(vsd)
+total_PCA<-prcomp(vsd_matrix)
+
+ggplot(total_PCA$x[,1:2], aes(x = PC1, y = PC2)) +geom_point(alpha = 0.5)+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()
+ggsave("total_PCA.pdf")
+
+###
