@@ -1451,4 +1451,781 @@ total_PCA<-prcomp(vsd_matrix)
 ggplot(total_PCA$x[,1:2], aes(x = PC1, y = PC2)) +geom_point(alpha = 0.5)+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()
 ggsave("total_PCA.pdf")
 
-###
+library(edgeR)
+library(DESeq2)
+data = read.table("/home/yee/EXPK/analysis/megan_fungi_CueifongLake_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(3,4,12,2,9,1,5,6,7,11,8,10)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+ddsFullCountTable <- estimateSizeFactors(ddsFullCountTable, type = "poscounts")
+vsd_megan_fungi_C <- varianceStabilizingTransformation (ddsFullCountTable)
+vsd_matrix<-assay(vsd_megan_fungi_C)
+megan_fungi_C_PCA<-prcomp(t(vsd_matrix))
+megan_fungi_C_PCA_df<-cbind(megan_fungi_C_PCA$x,conditions)
+
+ggplot(megan_fungi_C_PCA_df, aes(x = PC1, y = PC2,colour= conditions)) +geom_point()+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()+labs(title="megan_fungi_CueifongLake_PCA")
+ggsave("megan_fungi_CueifongLake_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/megan_fungi_Tsaopi_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,6,4,3,5,8,7,11,10,9,12)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+ddsFullCountTable <- estimateSizeFactors(ddsFullCountTable, type = "poscounts")
+vsd_megan_fungi_T <- varianceStabilizingTransformation (ddsFullCountTable)
+vsd_matrix<-assay(vsd_megan_fungi_T)
+megan_fungi_T_PCA<-prcomp(t(vsd_matrix))
+megan_fungi_T_PCA_df<-cbind(megan_fungi_T_PCA$x,conditions)
+
+ggplot(megan_fungi_T_PCA_df, aes(x = PC1, y = PC2, colour= conditions)) +geom_point()+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()+labs(title="megan_fungi_Tsaopi_PCA")
+ggsave("megan_fungi_Tsaopi_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/megan_plant_CueifongLake_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(3,4,12,2,9,1,5,6,7,11,8,10)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+ddsFullCountTable <- estimateSizeFactors(ddsFullCountTable, type = "poscounts")
+vsd_megan_plant_C <- varianceStabilizingTransformation(ddsFullCountTable)
+vsd_matrix<-assay(vsd_megan_plant_C)
+megan_plant_C_PCA<-prcomp(t(vsd_matrix))
+megan_plant_C_PCA_df<-cbind(megan_plant_C_PCA$x,conditions)
+
+ggplot(megan_plant_C_PCA_df, aes(x = PC1, y = PC2,colour= conditions)) +geom_point()+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()+labs(title="megan_plant_CueifongLake_PCA")
+ggsave("megan_plant_CueifongLake_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/megan_plant_Tsaopi_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,6,4,3,5,8,7,11,10,9,12)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+ddsFullCountTable <- estimateSizeFactors(ddsFullCountTable, type = "poscounts")
+vsd_megan_plant_T <- varianceStabilizingTransformation(ddsFullCountTable)
+vsd_matrix<-assay(vsd_megan_plant_T)
+megan_plant_T_PCA<-prcomp(t(vsd_matrix))
+megan_plant_T_PCA_df<-cbind(megan_plant_T_PCA$x,conditions)
+
+ggplot(megan_plant_T_PCA_df, aes(x = PC1, y = PC2,colour= conditions)) +geom_point()+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()+labs(title="megan_plant_Tsaopi_PCA")
+ggsave("megan_plant_Tsaopi_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/megan_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,3,4,19,24,9,10,11,12,22,23,5,6,7,8,20,21,13,14,15,16,17,18)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("CueifongLake_HIGH", 6), rep("CueifongLake_LOW", 6), rep("Tsaopi_HIGH", 6), rep("Tsaopi_LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+ddsFullCountTable <- estimateSizeFactors(ddsFullCountTable, type = "poscounts")
+vsd_megan <- varianceStabilizingTransformation(ddsFullCountTable)
+vsd_matrix<-assay(vsd_megan)
+megan_PCA<-prcomp(t(vsd_matrix))
+megan_PCA_df<- cbind(megan_PCA$x,conditions)
+
+ggplot(megan_PCA_df, aes(x = PC1, y = PC2, colour= conditions)) +geom_point()+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()+labs(title="megan_PCA")
+ggsave("megan_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/megan_fungi_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,3,4,19,24,9,10,11,12,22,23,5,6,7,8,20,21,13,14,15,16,17,18)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("CueifongLake_HIGH", 6), rep("CueifongLake_LOW", 6), rep("Tsaopi_HIGH", 6), rep("Tsaopi_LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+ddsFullCountTable <- estimateSizeFactors(ddsFullCountTable, type = "poscounts")
+vsd_megan_fungi <- varianceStabilizingTransformation(ddsFullCountTable)
+vsd_matrix<-assay(vsd_megan_fungi)
+megan_fungi_PCA<-prcomp(t(vsd_matrix))
+megan_fungi_PCA_df<- cbind(megan_fungi_PCA$x,conditions)
+
+ggplot(megan_fungi_PCA_df, aes(x = PC1, y = PC2, colour= conditions)) +geom_point()+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()+labs(title="megan_fungi_PCA")
+ggsave("megan_fungi_PCA.pdf")
+
+data = read.table("/home/yee/EXPK/analysis/megan_plant_count_matrix", header=T, row.names=1, com='')
+col_ordering = c(1,2,3,4,19,24,9,10,11,12,22,23,5,6,7,8,20,21,13,14,15,16,17,18)
+rnaseqMatrix = data[,col_ordering]
+rnaseqMatrix = round(rnaseqMatrix)
+rnaseqMatrix = rnaseqMatrix[rowSums(cpm(rnaseqMatrix) > 1) >= 2,]
+conditions = data.frame(conditions=factor(c(rep("CueifongLake_HIGH", 6), rep("CueifongLake_LOW", 6), rep("Tsaopi_HIGH", 6), rep("Tsaopi_LOW", 6))))
+rownames(conditions) = colnames(rnaseqMatrix)
+ddsFullCountTable <- DESeqDataSetFromMatrix(
+    countData = rnaseqMatrix,
+    colData = conditions,
+    design = ~ conditions)
+ddsFullCountTable <- estimateSizeFactors(ddsFullCountTable, type = "poscounts")
+vsd_megan_plant <- varianceStabilizingTransformation(ddsFullCountTable)
+vsd_matrix<-assay(vsd_megan_plant)
+megan_plant_PCA<-prcomp(t(vsd_matrix))
+megan_plant_PCA_df<- cbind(megan_plant_PCA$x,conditions)
+
+ggplot(megan_plant_PCA_df, aes(x = PC1, y = PC2, colour= conditions)) +geom_point()+theme_light()+theme_bw(base_size=15)+theme(axis.text.x=element_text(size=20),axis.text.y=element_text(size=20),axis.title = element_text(size = 40))+ stat_ellipse()+labs(title="megan_plant_PCA")
+ggsave("megan_plant_PCA.pdf")
+
+
+
+------------------------------------------------PERMANOVA----------------------------------------------
+#R
+vsd_matrix<-assay(vsd_Fungi_C)
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_Fungi_C<-adonis2(formula = t(vsd_matrix) ~ temperature, permanova_conditions)
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = t(vsd_matrix) ~ temperature, data = permanova_conditions)
+#         Df   SumOfSqs      R2      F Pr(>F)   
+#Model     1 7.7674e-05 0.28642 4.0138  0.004 **
+#Residual 10 1.9352e-04 0.71358                 
+#Total    11 2.7119e-04 1.00000                 
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+vsd_matrix<-assay(vsd_Fungi_T)
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_Fungi_T <-adonis2(formula = t(vsd_matrix) ~ temperature, permanova_conditions)
+
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = t(vsd_matrix) ~ temperature, data = permanova_conditions)
+#         Df   SumOfSqs      R2      F Pr(>F)    
+#Model     1 0.00016626 0.26044 3.5216  0.001 ***
+#Residual 10 0.00047211 0.73956                  
+#Total    11 0.00063836 1.00000                  
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+vsd_matrix<-assay(vsd_plant_C)
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_plant_C <-adonis2(formula = t(vsd_matrix) ~ temperature, permanova_conditions)
+
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = t(vsd_matrix) ~ temperature, data = permanova_conditions)
+#         Df   SumOfSqs      R2      F Pr(>F)  
+#Model     1 0.00067771 0.24117 3.1782  0.016 *
+#Residual 10 0.00213235 0.75883                
+#Total    11 0.00281007 1.00000                
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+vsd_matrix<-assay(vsd_plant_T)
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_plant_T <-adonis2(formula = t(vsd_matrix) ~ temperature, permanova_conditions)
+
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = t(vsd_matrix) ~ temperature, data = #permanova_conditions)
+#         Df  SumOfSqs      R2     F Pr(>F)
+#Model     1 0.0003306 0.09886 1.097  0.288
+#Residual 10 0.0030140 0.90114             
+#Total    11 0.0033447 1.00000
+
+
+permanova_conditions = data.frame(site=factor(c(rep("CueifongLake", 12),rep("HIGH", 12))), temperature=factor(c(rep("HIGH", 6), rep("LOW", 6), rep("HIGH", 6), rep("LOW", 6))))
+
+adonis2(formula = vsd_matrix ~ site*temperature, permanova_conditions)
+
+# 1. 載入必要套件
+library(edgeR)
+library(vegan)
+
+# 2. 將 raw count matrix 輸入 edgeR 格式
+# counts_mat：基因 × 樣本的 raw count matrix
+data = read.table("/home/yee/EXPK/analysis/megan_fungi_CueifongLake_count_matrix", header=T, row.names=1, com='')
+dge_megan_fungi_C <- DGEList(counts = data)
+data = read.table("/home/yee/EXPK/analysis/megan_fungi_Tsaopi_count_matrix", header=T, row.names=1, com='')
+dge_megan_fungi_T <- DGEList(counts = data)
+data = read.table("/home/yee/EXPK/analysis/megan_plant_CueifongLake_count_matrix", header=T, row.names=1, com='')
+dge_megan_plant_C <- DGEList(counts = data)
+data = read.table("/home/yee/EXPK/analysis/megan_plant_Tsaopi_count_matrix", header=T, row.names=1, com='')
+dge_megan_plant_T <- DGEList(counts = data)
+data = read.table("/home/yee/EXPK/analysis/megan_count_matrix", header=T, row.names=1, com='')
+dge_megan <- DGEList(counts = data)
+data = read.table("/home/yee/EXPK/analysis/megan_fungi_count_matrix", header=T, row.names=1, com='')
+dge_megan_fungi <- DGEList(counts = data)
+data = read.table("/home/yee/EXPK/analysis/megan_plant_count_matrix", header=T, row.names=1, com='')
+dge_megan_plant <- DGEList(counts = data)
+
+# 3. 計算 normalization factor
+dge_megan_fungi_C <- calcNormFactors(dge_megan_fungi_C)
+dge_megan_fungi_T <- calcNormFactors(dge_megan_fungi_T)
+dge_megan_plant_C <- calcNormFactors(dge_megan_plant_C)
+dge_megan_plant_T <- calcNormFactors(dge_megan_plant_T)
+dge_megan <- calcNormFactors(dge_megan)
+dge_megan_fungi <- calcNormFactors(dge_megan_fungi)
+dge_megan_plant <- calcNormFactors(dge_megan_plant)
+
+# 4. 將 counts 轉為 CPM（counts per million），避免極端值影響
+norm_counts_megan_fungi_C <- cpm(dge_megan_fungi_C, normalized.lib.sizes = TRUE)
+norm_counts_megan_fungi_T <- cpm(dge_megan_fungi_T, normalized.lib.sizes = TRUE)
+norm_counts_megan_plant_C <- cpm(dge_megan_plant_C, normalized.lib.sizes = TRUE)
+norm_counts_megan_plant_T <- cpm(dge_megan_plant_T, normalized.lib.sizes = TRUE)
+norm_counts_megan <- cpm(dge_megan, normalized.lib.sizes = TRUE)
+norm_counts_megan_fungi <- cpm(dge_megan_fungi, normalized.lib.sizes = TRUE)
+norm_counts_megan_plant <- cpm(dge_megan_plant, normalized.lib.sizes = TRUE)
+
+# 5. 轉為相對 abundance（避免距離出錯）
+rel_counts_megan_fungi_C <- t(apply(norm_counts_megan_fungi_C, 2, function(x) x / sum(x)))
+rel_counts_megan_fungi_T <- t(apply(norm_counts_megan_fungi_T, 2, function(x) x / sum(x)))
+rel_counts_megan_plant_C <- t(apply(norm_counts_megan_plant_C, 2, function(x) x / sum(x)))
+rel_counts_megan_plant_T <- t(apply(norm_counts_megan_plant_T, 2, function(x) x / sum(x)))
+rel_counts_megan <- t(apply(norm_counts_megan, 2, function(x) x / sum(x)))
+rel_counts_megan_fungi <- t(apply(norm_counts_megan_fungi, 2, function(x) x / sum(x)))
+rel_counts_megan_plant <- t(apply(norm_counts_megan_plant, 2, function(x) x / sum(x)))
+
+# 6. 計算距離矩陣（例如 Bray-Curtis）
+#dist_mat_megan_fungi_C <- vegdist(t(rel_counts_megan_fungi_C), method = "bray")  # 注意要 transpose
+
+# 7. 執行 PERMANOVA（adonis2 比 adonis 更推薦）
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_megan_fungi_C <-adonis2(formula = rel_counts_megan_fungi_C ~ temperature, permanova_conditions)
+
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = rel_counts_megan_fungi_C ~ temperature, data = permanova_conditions)
+#         Df SumOfSqs      R2     F Pr(>F)
+#Model     1    0.329 0.08265 0.901  0.555
+#Residual 10    3.652 0.91735             
+#Total    11    3.981 1.00000
+
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_megan_fungi_T <-adonis2(formula = rel_counts_megan_fungi_T ~ temperature, permanova_conditions)
+
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = rel_counts_megan_fungi_T ~ temperature, data = permanova_conditions)
+#         Df SumOfSqs      R2      F Pr(>F)   
+#Model     1   1.4184 0.33478 5.0327  0.006 **
+#Residual 10   2.8185 0.66522                 
+#Total    11   4.2369 1.00000                 
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_megan_plant_C <-adonis2(formula = rel_counts_megan_plant_C ~ temperature, permanova_conditions)
+
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = rel_counts_megan_plant_C ~ temperature, data = permanova_conditions)
+#         Df SumOfSqs      R2      F Pr(>F)
+#Model     1  0.03598 0.08968 0.9852  0.383
+#Residual 10  0.36526 0.91032              
+#Total    11  0.40124 1.00000
+
+permanova_conditions = data.frame(temperature=factor(c(rep("HIGH", 6), rep("LOW", 6))))
+permanova_megan_plant_T <-adonis2(formula = rel_counts_megan_plant_T ~ temperature, permanova_conditions)
+
+#Permutation test for adonis under reduced model
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = rel_counts_megan_plant_T ~ temperature, data = permanova_conditions)
+#         Df SumOfSqs     R2      F Pr(>F)
+#Model     1  0.05965 0.1492 1.7537  0.132
+#Residual 10  0.34014 0.8508              
+#Total    11  0.39979 1.0000
+
+permanova_conditions = data.frame(site=factor(c(rep("CueifongLake", 12),rep("Tsaopi", 12))), temperature=factor(c(rep("HIGH", 6), rep("LOW", 6), rep("HIGH", 6), rep("LOW", 6))))
+permanova_megan <-adonis2(formula = rel_counts_megan ~ site*temperature, permanova_conditions, by="terms")
+
+#Permutation test for adonis under reduced model
+#Terms added sequentially (first to last)
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = rel_counts_megan ~ site * temperature, data = permanova_conditions, by = "terms")
+#                 Df SumOfSqs      R2      F Pr(>F)
+#site              1  0.06850 0.06894 1.6481  0.088 .
+#temperature       1  0.04458 0.04487 1.0727  0.339
+#site:temperature  1  0.04931 0.04963 1.1865  0.260
+#Residual         20  0.83123 0.83656
+#Total            23  0.99363 1.00000
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+permanova_conditions = data.frame(site=factor(c(rep("CueifongLake", 12),rep("Tsaopi", 12))), temperature=factor(c(rep("HIGH", 6), rep("LOW", 6), rep("HIGH", 6), rep("LOW", 6))))
+permanova_megan_fungi <-adonis2(formula = rel_counts_megan_fungi ~ site*temperature, permanova_conditions, by="terms")
+
+#Permutation test for adonis under reduced model
+#Terms added sequentially (first to last)
+#Permutation: free
+#Number of permutations: 999
+
+#adonis2(formula = rel_counts_megan_fungi ~ site * temperature, data = permanova_conditions, by = "terms")
+#                 Df SumOfSqs      R2      F Pr(>F)   
+#site              1   1.0680 0.11550 2.9301  0.002 **
+#temperature       1   0.4359 0.04714 1.1958  0.184   
+#site:temperature  1   0.4526 0.04895 1.2417  0.171   
+#Residual         20   7.2899 0.78841                 
+#Total            23   9.2464 1.00000                 
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+permanova_conditions = data.frame(site=factor(c(rep("CueifongLake", 12),rep("Tsaopi", 12))), temperature=factor(c(rep("HIGH", 6), rep("LOW", 6), rep("HIGH", 6), rep("LOW", 6))))
+permanova_megan_plant <-adonis2(formula = rel_counts_megan_plant ~ site*temperature, permanova_conditions, by="terms")
+
+#####
+----------------------------------------------------MEGAN-----------------------------------------------
+wget https://software-ab.cs.uni-tuebingen.de/download/megan6/MEGAN_Community_unix_6_25_10.sh
+
+wget https://software-ab.cs.uni-tuebingen.de/download/megan6/megan-map-Feb2022.db.zip
+unzip megan-map-Feb2022.db.zip
+wget https://software-ab.cs.uni-tuebingen.de/download/megan6/megan-nucl-Feb2022.db.zip
+unzip megan-nucl-Feb2022.db.zip
+
+export FONTCONFIG_PATH=/etc/fonts
+sh MEGAN_Community_unix_6_25_10.sh
+
+../../megan/tools/blast2rma  -i nr_aln -f BlastTab -o nr_aln_noweighted.rma -mdb ../../megan-map-Feb2022.db -t 72
+../../megan/tools/rma2info -i nr_aln_noweighted.rma -c2c Taxonomy -r2c Taxonomy -p true -r true -u false > megan_noweighted_taxonomy
+
+../../megan/tools/blast2rma  -i nr_aln -f BlastTab -o nr_aln.rma -mdb ../../megan-map-Feb2022.db -alg weighted -t 72
+../../megan/tools/rma2info -i nr_aln.rma -c2c Taxonomy -r2c Taxonomy -p true -r true -u false > megan_taxonomy
+
+
+#grep 'Fungi' nr_taxa_info | cut -f1 | sort | uniq -c > test
+#grep -Ff <(awk '{print$2}' test) nr_taxa_info | cut -f1 | sort | uniq -c > tt
+#paste -d ' ' tt test | awk '{print log($3/(($1-$3)+1))}' >ttt
+#grep -A1 --no-group-separator -Ff <(paste -d ' ' tt test ttt | sort -nk5 | tail -n15 | awk '{print $2}') cd-hit-est >>megan_test.fasta
+
+diamond blastx -d /home/yee/nr_db -q megan_test.fasta -o megan_test.aln.txt --sensitive -p 72 -b 20 -c 1 -e 0.0000000001 --top 5 --outfmt 6
+diamond blastx -d /home/yee/nr_db -q megan_test.fasta -o megan_test.aln.xml --sensitive -p 72 -b 20 -c 1 -e 0.0000000001 --top 5 --outfmt 5
+
+../../megan/tools/blast2rma  -i megan_test.aln.txt -f BlastTab -o megan_test.aln.txt.rma -mdb ../../megan-map-Feb2022.db -alg weighted -t 72
+../../megan/tools/rma2info -i megan_test.aln.txt.rma -c2c Taxonomy -r2c Taxonomy -p true -r true -u false > megan_txt_taxonomy
+
+../../megan/tools/blast2rma  -i megan_test.aln.txt -f BlastTab -o megan_test.aln.xml.rma -mdb ../../megan-map-Feb2022.db -alg weighted -t 72
+../../megan/tools/rma2info -i megan_test.aln.xml.rma -c2c Taxonomy -r2c Taxonomy -p true -r true -u false > megan_xml_taxonomy
+
+
+wget https://software-ab.cs.uni-tuebingen.de/download/megan7/megan-nr-r1a.zip
+unzip megan-nr-r1a.zip
+../../megan/tools/blast2rma  -i megan_test.aln.txt -f BlastTab -o megan_test.7.rma -mdb ../../megan-nr-r1a.mdb -alg weighted -t 72
+../../megan/tools/rma2info -i megan_test.aln.txt.rma -c2c Taxonomy -r2c Taxonomy -p true -r true -u false > megan_test_7_taxonomy
+
+../../megan/tools/blast2rma  -i nr_aln -f BlastTab -o nr_aln_7.rma -mdb ../../megan-nr-r1a.mdb -alg weighted -t 72
+../../megan/tools/rma2info -i nr_aln_7.rma -c2c Taxonomy -r2c Taxonomy -p true -r true -u false > megan_7_taxonomy
+
+../../megan/tools/read-extractor -i nr_aln.rma  -o test_extract -c Taxonomy -n Fungi -b
+
+
+----------------------taxa table------------------------------sed -n 's/.*\(<[^ ]*.*>\).*/\1/p' megan_7_taxonomy | sort | uniq -c
+# 314486 <animals>
+#    315 <beetles>
+#    501 <family Mollisiaceae>
+#    809 <ferns>
+#    242 <gastropods>
+
+sed 's/ <[A-z ]\+>//' megan_7_taxonomy > megan_7_taxonomy_cln
+
+#grep -P "^K[0-9]" megan_7_taxonomy | cut -f1,3 | sed -e 's/;$//' -e 's/; /\t/g' -e 's/Not assigned/unknown/' | awk 'BEGIN{FS=OFS="\t"}{printf "%s",$0; for(i=NF+1;i<=30;i++) printf "\t%s","unknown";if(i=30) printf "\n"}' | cut -f2 --complement > megan_taxa_table
+
+#echo -e "Hominidae" | taxonkit --data-dir /home/yee name2taxid | cut -f2|taxonkit --data-dir /home/yee lineage -R | cut -f3 | sed -e 's/;/\t/g'> tmp
+
+#awk 'BEGIN{FS="\t"}{
+for(i=1;i<=NF;i++){ 
+if(index($i,"unknown")>0){ 
+print i-2;
+break; 
+}
+}
+}' megan_taxa_table > test
+
+#awk -F $'\t' '
+FNR==1 { file_count++ }  # Count how many files are processed
+{ 
+	if (file_count == 1) {
+		for (i=1; i<=NF;i++){
+			if(i==1){
+				map[i] = "no rank";
+			}else{
+				map[i] = map[i-1]";"$i;
+			}
+		}
+	next;
+	}
+	if($1==0){
+		print "Not assigned"
+	}else{
+		print map[$1];
+	}
+}' tmp test > ttt
+
+#grep -P "^K[0-9]" megan_7_taxonomy | cut -f3 | sed -e 's/;$//' -e 's/; /\t/g' | awk 'BEGIN{FS="\t"}{print $NF}' | taxonkit --data-dir /home/yee name2taxid | cut -f2|taxonkit --data-dir /home/yee lineage -R | cut -f3 > test
+
+#sed -n 's/.*\(no rank[^ ]*.*kingdom\).*/\1/p' test | sort | uniq -c
+#no rank;superkingdom;clade;kingdom
+# superkingdom;clade;kingdom;phylum;class;order;family;no rank
+
+#sed -n 's/.*\(;kingdom[^ ]*.*;phylum\).*/\1/p' test | sort | uniq -c
+#kingdom;clade;clade;clade;clade;clade;phylum
+
+#echo -e "no rank;superkingdom;clade;Viruses superkingdom;kingdom;clade;clade;clade;clade;clade;no rank;subkingdom;phylum;clade;clade;subphylum;clade;clade;clade;clade;no rank;superclass;clade;clade;clade;clade;clade;clade;clade;clade;clade;clade;clade;class;clade;clade;clade;clade;clade;clade;subclass;infraclass;clade;no rank;cohort;subcohort;clade;clade;clade;clade;clade;clade;superorder;order;suborder;infraorder;parvorder;clade;clade;no rank;clade;superfamily;family;clade;subfamily;clade;no rank;tribe;subtribe;genus;no rank;species"
+
+
+#grep -P "^K[0-9]" megan_7_taxonomy | cut -f3 | sed -e 's/;$//' -e 's/; /;/g' -e 's/NCBI;//'> taxa_name 
+#mapfile -t taxa_name < taxa_name
+
+#grep -P "^K[0-9]" megan_7_taxonomy | cut -f3 | sed -e 's/;$//' -e 's/; /\t/g' | awk 'BEGIN{FS="\t"}{print $NF}' | taxonkit --data-dir /home/yee name2taxid | cut -f2|taxonkit --data-dir /home/yee lineage -R | cut -f3 > taxa_level 
+#mapfile -t taxa_level < taxa_level
+
+#IFS=';' read -ra ref <<< "no rank;superkingdom;clade;Viruses superkingdom;kingdom;clade;clade;clade;clade;clade;no rank;subkingdom;phylum;clade;clade;subphylum;clade;clade;clade;clade;no rank;superclass;clade;clade;clade;clade;clade;clade;clade;clade;clade;clade;clade;class;clade;clade;clade;clade;clade;clade;subclass;infraclass;clade;no rank;cohort;subcohort;clade;clade;clade;clade;clade;clade;superorder;order;suborder;infraorder;parvorder;clade;clade;no rank;clade;superfamily;family;clade;subfamily;clade;no rank;tribe;subtribe;genus;no rank;species"
+
+
+#while IFS=";" read -r -a taxa;
+#do
+#	for index in "${!taxa[@]}";
+#		do
+#			echo "${taxa[index]}" |taxonkit --data-dir /home/yee name2taxid| cut-f2 | taxonkit --data-dir /home/yee lineage -R
+#		done
+#	echo "${#taxa[@]}"
+#done< taxa_name
+
+#taxa_result=()
+#while IFS= read -r  taxa;
+#do
+#	taxaname=$(echo ${taxa}| awk 'BEGIN{FS=";"}{print $NF}')
+#taxanumber=$(echo ${taxaname}| taxonkit --data-dir /home/yee name2taxid | wc -l)
+#	taxa_result+=("${taxaname}\t${taxanumber}")
+#done< taxa_name
+#for row in "${taxa_result[@]}";
+#	do
+#echo -e "$row" >> taxaid_check
+#done
+
+
+#grep -P "^K[0-9]" megan_7_taxonomy_cln | grep "Fungi" | cut -f3 | sed -e 's/;$//' -e 's/; /;/g' -e 's/NCBI;//' > fungi_taxa_name
+#grep -P "^K[0-9]" megan_7_taxonomy_cln | cut -f3 | grep "Fungi" | sed -e 's/;$//' -e 's/; /\t/g' | awk 'BEGIN{FS="\t"}{print $NF}' | taxonkit --data-dir /home/yee name2taxid | cut -f2|taxonkit --data-dir /home/yee lineage -R | cut -f3 > fungi_taxa_level
+
+#Fungi
+#Glomeromycetes
+
+#grep -P "^K[0-9]" megan_7_taxonomy_cln | grep "Embryophyta" | cut -f3 | sed -e 's/;$//' -e 's/; /;/g' -e 's/NCBI;//' > plant_taxa_name
+#grep -P "^K[0-9]" megan_7_taxonomy_cln| grep -P "Embryophyta" | cut -f3 | sed -e 's/;$//' -e 's/; /\t/g' | awk 'BEGIN{FS="\t"}{print $NF}' | taxonkit --data-dir /home/yee name2taxid | cut -f2|taxonkit --data-dir /home/yee lineage -R | cut -f2 > plant_taxa_level
+
+#Polypodiidae	1521262
+
+#grep -P "^K[0-9]" megan_7_taxonomy_cln| grep -P "Embryophyta"| cut -f3 | sed -e 's/;$//' -e 's/; /\t/g' | awk 'BEGIN{FS="\t"}{print $NF}' | while IFS= read -r taxaname; do     if [[ "$taxaname" == "Polypodiidae" ]]; then         taxaid="1521262";     else         taxaid=$(echo "$taxaname" | taxonkit --data-dir /home/yee name2taxid | cut -f2);     fi;     echo "$taxaid" | taxonkit --data-dir /home/yee lineage -R | cut -f3 >> plant_taxa_level; done
+
+
+#grep -P "^K[0-9]" megan_7_taxonomy_cln | grep -P "Embryophyta" | tail | sed -e 's/;$//' -e 's/; /\t/g' | awk '{if(NR>1)print ""; print $0}' | parallel --pipe --recend '\n\n' -j 72 " 
+while IFS= read -r read; do  
+    gene=\$(echo \"\$read\" | awk -F\"\t\" '{print \$1}')
+    taxaname=\$(echo \"\$read\" | awk -F\"\t\" '{print \$NF}')
+    if [[ \"\$taxaname\" == \"Polypodiidae\" ]]; then
+        taxaid=\"1521262\"
+    else
+        taxaid=\$(echo \"\$taxaname\" | taxonkit --data-dir /home/yee name2taxid | cut -f2)
+    fi
+    lineage=\$(echo \"\$taxaid\" | taxonkit --data-dir /home/yee lineage -R | cut -f3)
+    echo -e \"\${gene}\t\${lineage}\"
+done
+" | sed '/^\s*$/d'>> test_plant_taxa_level
+
+
+grep -P "^K[0-9]" megan_7_taxonomy_cln| cut -f1,3 | sed -e 's/;$//' -e 's/; /\t/g'|awk -F "[\t]" '{print $1"\t"$NF}'> megan_taxa_import
+
+cut -f2 megan_taxa_import | sort | uniq | taxonkit --data-dir /home/yee name2taxid > megan_taxa_ID
+
+05:34:45.291 [WARN] multiple TaxIds found for 'Actinobacteria'
+05:34:45.291 [WARN] multiple TaxIds found for 'Aculeata'
+05:34:45.292 [WARN] multiple TaxIds found for 'Aphelenchoididae'
+05:34:45.292 [WARN] multiple TaxIds found for 'Archaea'
+05:34:45.292 [WARN] multiple TaxIds found for 'Bacteria'
+05:34:45.292 [WARN] multiple TaxIds found for 'Bacteroidetes'
+05:34:45.292 [WARN] multiple TaxIds found for 'Bdelloidea'
+05:34:45.292 [WARN] multiple TaxIds found for 'Chloroflexi'
+05:34:45.292 [WARN] multiple TaxIds found for 'Coccomyxa'
+05:34:45.292 [WARN] multiple TaxIds found for 'Cyanobacteria'
+05:34:45.292 [WARN] multiple TaxIds found for 'Euthyneura'
+05:34:45.292 [WARN] multiple TaxIds found for 'Firmicutes'
+05:34:45.292 [WARN] multiple TaxIds found for 'Fungi'
+05:34:45.292 [WARN] multiple TaxIds found for 'Glomeromycetes'
+05:34:45.292 [WARN] multiple TaxIds found for 'Gnathifera'
+05:34:45.292 [WARN] multiple TaxIds found for 'Gnathostomata'
+05:34:45.292 [WARN] multiple TaxIds found for 'Planctomycetes'
+05:34:45.292 [WARN] multiple TaxIds found for 'Polyphaga'
+05:34:45.293 [WARN] multiple TaxIds found for 'Polypodiidae'
+05:34:45.293 [WARN] multiple TaxIds found for 'Primates'
+05:34:45.293 [WARN] multiple TaxIds found for 'Proteobacteria'
+05:34:45.293 [WARN] multiple TaxIds found for 'Pterygota'
+05:34:45.293 [WARN] multiple TaxIds found for 'Rothia'
+05:34:45.293 [WARN] multiple TaxIds found for 'Theria'
+05:34:45.293 [WARN] multiple TaxIds found for 'Verrucomicrobia'
+05:34:45.293 [WARN] multiple TaxIds found for 'Vertebrata'
+05:34:45.293 [WARN] multiple TaxIds found for 'Viruses'
+
+#Replicate: Actinobacteria,Aphelenchoididae,Archaea, Cyanobacteria,Fungi, Glomeromycetes,Primates,Proteobacteria,Verrucomicrobia, Viruses
+#Need check: Aculeata,Bacteria,Bacteroidetes,Bdelloidea,Chloroflexi, Coccomyxa,Euthyneura,Firmicutes,Gnathifera, Gnathostomata,Planctomycetes,Polyphaga,Polypodiidae,Pterygota, Rothia,Theria,Vertebrata
+
+#Aculeata	7434
+#Bacteria	2
+#Bacteroidetes 976
+#Bdelloidea	44578
+#Chloroflexi	200795
+#Coccomyxa	41891
+#Euthyneura 216307
+#Firmicutes	1239
+#Gnathifera	2697496
+#Gnathostomata	7776
+#Planctomycetes	203682
+#Polyphaga	41084
+#Polypodiidae	1521262
+#Pterygota	7496
+#Rothia	32207
+#Theria	32525
+#Vertebrata	7742
+
+grep -P "\t$" megan_taxa_ID
+#Acidobacteria bacterium	
+#Cyanobacteria/Melainabacteria group	
+#Helotiales sp. DMI_Dod_QoI	
+#NCBI	
+#Not assigned	
+#Prevotella nanceiensis	
+#unclassified Acidobacteria	
+#unclassified Chloroflexi	
+#unclassified Coccomyxa (in: Viridiplantae)	
+#unclassified Rothia (in: Bacteria)
+
+sed -i e 's/Acidobacteria bacterium\t/Acidobacteria bacterium\t57723/' -e 's/Cyanobacteria\/Melainabacteria group\t/Cyanobacteria\/Melainabacteria group\t1798711/' -e 's/Helotiales sp. DMI_Dod_QoI\t/Helotiales sp. DMI_Dod_QoI \t2728926/' -e 's/Prevotella nanceiensis\t/Prevotella nanceiensis\t425941/' -e 's/unclassified Acidobacteria\t/unclassified Acidobacteria\t57723/' -e 's/unclassified Chloroflexi\t/unclassified Chloroflexi\t200795/' -e 's/unclassified Coccomyxa (in: Viridiplantae)\t/unclassified Coccomyxa (in: Viridiplantae)\t41891/' -e 's/unclassified Rothia (in: Bacteria)\t/unclassified Rothia (in: Bacteria)\t32207/' -e 's/NCBI\t/NCBI\tNA/' -e 's/Not assigned\t/Not assigned\tNA/' megan_taxa_ID
+
+#while read -r ID;
+#do
+#	taxaID=$(echo "$ID" | awk -F "\t" '{print$2}')
+#	if [[ "$taxaID"!="NA" ]]; then 
+#taxa_level=$(echo "$taxaID" | taxonkit --data-dir /home/yee lineage -R) 
+#else taxa_level="NA\tNot assigned\tNot assigned";
+#	fi
+#	echo -e "$taxa_level" >>megan_taxa_level
+#done< megan_taxa_ID
+
+awk -F"\t" '{
+    if ($2 == "NA") {
+        print $2 "\t" $1 "\tNot assigned\tNot assigned";
+    } else {
+        print $2 "\t" $1;
+    }
+}' megan_taxa_ID | sort -k1,1 | taxonkit --data-dir /home/yee lineage -R | awk 'BEGIN{OFS="\t"}  {print $0}' > megan_taxa_level
+
+awk -F $'\t' '
+FNR==1 { file_count++ }  # Count how many files are processed
+
+{ 
+if (file_count == 1) {
+           map1[$2][1] = $3;  # Store data from each file using file_count as an index
+map1[$2][2] = $4;  # Store data from each file using file_count as an index
+next;
+   }
+
+    printf "%s\t",$1;  # Print the current line from file1.txt
+	taxon= $2; 
+    if (taxon in map1) { 
+printf "%s\t%s\t", map1[taxon][1], map1[taxon][2]; 
+}
+    print "";  # Newline
+}'  megan_taxa_level megan_taxa_import > megan_taxa_build
+
+# 將 template 轉為陣列
+IFS=';' read -ra ref <<< "no rank;superkingdom;clade;Viruses superkingdom;kingdom;clade;clade;clade;clade;clade;no rank;subkingdom;phylum;clade;clade;subphylum;clade;clade;clade;clade;no rank;superclass;clade;clade;clade;clade;clade;clade;clade;clade;clade;clade;clade;class;clade;clade;clade;clade;clade;clade;subclass;infraclass;clade;no rank;cohort;subcohort;clade;clade;clade;clade;clade;clade;superorder;order;suborder;infraorder;parvorder;clade;clade;no rank;clade;superfamily;family;clade;subfamily;clade;no rank;tribe;subtribe;genus;no rank;species"
+
+mapfile -t taxa_level_lines < <(cut -f3 megan_taxa_build)
+mapfile -t taxa_name_lines < <(cut -f2 megan_taxa_build)
+# 處理每一行
+for idx in "${!taxa_level_lines[@]}"; do
+# 拆分每行
+IFS=';' read -ra level <<< "${taxa_level_lines[idx]}"
+    IFS=';' read -ra name <<< "${taxa_name_lines[idx]}"
+    
+    tgt_idx=0
+    output=()
+
+    for (( i=0; i<${#ref[@]}; i++ )); do
+        if [[ $tgt_idx -lt ${#level[@]} && "${ref[i]}" == "${level[tgt_idx]}" ]]; then
+            output+=("${name[tgt_idx]}")
+            ((tgt_idx++))
+        else
+            output+=("Not assigned")
+        fi
+    done
+
+    # 輸出該行結果
+    (IFS=$'\t'; echo -e "${output[*]}") >>megan_taxa_table
+done
+
+grep -vwFf <(cut -f1 megan_taxa_build | sed 's/_i[0-9]\+//') longest_count_matrix | grep -P "^K[0-9]" | cut -f1 > no_annotationid
+printf '\t%s' "${ref[@]}" > megan_taxa_table_total
+echo  "" >> megan_taxa_table_total
+paste <(cut -f1 megan_taxa_build | sed 's/^>//; s/_i[0-9]\+$//') megan_taxa_table >> megan_taxa_table_total
+awk -v arr="${#ref[@]}" '{printf "%s",$0; for (i=1; i<=arr; i++ ) {printf"\t%s","Not assigned"} print ""}' no_annotationid >>megan_taxa_table_total
+
+awk -F "\t" '{print $1"\t"$6"\t"$14"\t"$35"\t"$55"\t"$64"\t"$71"\t"$73}' megan_taxa_table_total > megan_taxa_table_7level
+
+----------------------relative abundance----------------------
+#R
+library("ggplot2")
+library("edgeR")
+rowdata<-read.table("longest_count_matrix")
+countmatrix<-rowdata[rowSums(cpm(rowdata)>1)>=2,]
+countmatrix<-countmatrix[,order(colnames(countmatrix))]
+sample_inform<-read.table("ExpK_experiment_design.tsv",header=TRUE,row.names=1)
+sample_inform<-sample_inform[,c(-1,-4)]
+sample_inform$type<-paste(sample_inform[,1],sample_inform[,2],sep="_")
+sample_inform<-sample_inform[order(rownames(sample_inform)),]
+
+megan_taxa<-read.table("megan_taxa_table_7level",sep="\t",header=TRUE,row.names=1)
+gene_table<-cbind(countmatrix,megan_taxa[which(rownames(megan_taxa)%in%rownames(countmatrix)),])
+
+library(tidyr)
+fungi_class_list<-as.data.frame(table(gene_table$class[which(gene_table$kingdom=="Fungi")],useNA="ifany"),stringsAsFactors=FALSE)[,1]
+fungi_class_relativeabundance_fungi_df<-NULL
+for(i in fungi_class_list){
+	fungi_class_relativeabundance_fungi_df<-rbind(fungi_class_relativeabundance_fungi_df,colSums(gene_table[intersect(which(gene_table[,27]==i),which(gene_table[,25]== "Fungi")),1:24]))
+}
+
+rownames(fungi_class_relativeabundance_fungi_df)<-fungi_class_list
+fungi_class_relativeabundance_fungi<-as.data.frame(pivot_longer(as.data.frame(fungi_class_relativeabundance_fungi_df),col=colnames(fungi_class_relativeabundance_fungi_df),names_to="sample",values_to="abundance"))
+fungi_class_relativeabundance_fungi$class<-unlist(lapply(fungi_class_list,function(x) rep(x,24)))
+fungi_class_relativeabundance_fungi<-cbind(fungi_class_relativeabundance_fungi,apply(sample_inform,2,function(x)rep(x,16)))
+
+random_color <- function(color_number) {
+  colors <- character(color_number)
+  for(i in 1:color_number) {
+    hex <- paste(
+      unlist(lapply(replicate(3, sample(0:255, 1)),
+                    function(x) sprintf("%02X", x))),
+      collapse = ""
+    )
+    colors[i] <- paste0("#", hex)
+  }
+  return(colors)
+}
+
+color<-random_color(16)
+ggplot(fungi_class_relativeabundance_fungi, aes(x = sample, y = abundance))+geom_bar(aes(fill = class), position = "fill", stat = "identity")+ scale_fill_manual(values =color)+xlab(label = NULL)+theme(legend.title = element_text(size = 18, face = "bold"),legend.text = element_text(size = 16, color = "black"),axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),axis.text.y = element_text(size = 16),axis.title = element_text(size = 20),strip.text.x = element_text(size = 18))+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1) ,labels = c("0%","25%","50%","75%","100%"))+ylab(label="Relative abundance (Fungi count / total Fungi count)")
+ggsave("fungi_class_relativeabundance_fungi.pdf",height=10)
+
+fungi_class_relativeabundance_total<-as.data.frame(cbind(fungi_class_relativeabundance_fungi[,1],fungi_class_relativeabundance_fungi[,2]/colSums(countmatrix),fungi_class_relativeabundance_fungi[,3:6]))
+colnames(fungi_class_relativeabundance_total)<- colnames(fungi_class_relativeabundance_fungi)
+ggplot(fungi_class_relativeabundance_total, aes(x = sample, y = abundance))+geom_bar(aes(fill = class), position = "stack", stat = "identity")+ scale_fill_manual(values =color)+xlab(label = NULL)+theme(legend.title = element_text(size = 18, face = "bold"),legend.text = element_text(size = 16, color = "black"),axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),axis.text.y = element_text(size = 16),axis.title = element_text(size = 20),strip.text.x = element_text(size = 18))+ scale_y_continuous(breaks = c(0, 0.0025, 0.005, 0.0075, 0.01) ,labels = c("0%","0.25%","0.5%","0.75%","1%"))+ylab(label="Relative abundance (Fungi count / total count)")
+ggsave("fungi_class_relativeabundance_total.pdf",height=10)
+
+
+kingdom_list<-as.data.frame(table(gene_table$kingdom,useNA="ifany"),stringsAsFactors=FALSE)[,1]
+kingdom_relativeabundance_df<-NULL
+for(i in kingdom_list){
+	kingdom_relativeabundance_df<-rbind(kingdom_relativeabundance_df,colSums(gene_table[which(gene_table[,25]==i),1:24]))
+}
+
+rownames(kingdom_relativeabundance_df)<-kingdom_list
+kingdom_relativeabundance <-as.data.frame(pivot_longer(as.data.frame(kingdom_relativeabundance_df),col=colnames(kingdom_relativeabundance_df),names_to="sample",values_to="abundance"))
+kingdom_relativeabundance$kingdom<-unlist(lapply(kingdom_list,function(x) rep(x,24)))
+kingdom_relativeabundance<-cbind(kingdom_relativeabundance,apply(sample_inform,2,function(x)rep(x,8)))
+color<-random_color(8)
+ggplot(kingdom_relativeabundance, aes(x = sample, y = abundance))+geom_bar(aes(fill = kingdom), position = "fill", stat = "identity")+ scale_fill_manual(values =color)+xlab(label = NULL)+theme(legend.title = element_text(size = 18, face = "bold"),legend.text = element_text(size = 16, color = "black"),axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),axis.text.y = element_text(size = 16),axis.title = element_text(size = 20),strip.text.x = element_text(size = 18))+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1) ,labels = c("0%","25%","50%","75%","100%"))+ylab(label="Relative abundance (Kingdom)")
+ggsave("kingdom_relative_abundance.pdf")
+
+sum(gene_table[which(gene_table[,25]=="Fungi"),1:24])/sum(gene_table[,1:24])
+#0.008510771
+sum(gene_table[which(gene_table[,25]=="Not assigned"),1:24])/sum(gene_table[,1:24])
+#0.1157791
+sum(gene_table[which(gene_table[,25]=="Viridiplantae"),1:24])/sum(gene_table[,1:24])
+#0.8551018
+
+viridiplantae_class_list<-as.data.frame(table(gene_table$class[which(gene_table$kingdom=="Viridiplantae")],useNA="ifany"),stringsAsFactors=FALSE)[,1]
+viridiplantae_class_relativeabundance_viridiplantae_df<-NULL
+for(i in viridiplantae_class_list){
+	viridiplantae_class_relativeabundance_viridiplantae_df<-rbind(viridiplantae_class_relativeabundance_viridiplantae_df,colSums(gene_table[intersect(which(gene_table[,27]==i),which(gene_table[,25]== "Viridiplantae")),1:24]))
+}
+
+rownames(viridiplantae_class_relativeabundance_viridiplantae_df)<-viridiplantae_class_list
+viridiplantae_class_relativeabundance_viridiplantae<-as.data.frame(pivot_longer(as.data.frame(viridiplantae_class_relativeabundance_viridiplantae_df),col=colnames(viridiplantae_class_relativeabundance_viridiplantae_df),names_to="sample",values_to="abundance"))
+viridiplantae_class_relativeabundance_viridiplantae$class<-unlist(lapply(viridiplantae_class_list,function(x) rep(x,24)))
+viridiplantae_class_relativeabundance_viridiplantae<-cbind(viridiplantae_class_relativeabundance_viridiplantae,apply(sample_inform,2,function(x)rep(x,14)))
+
+color<-random_color(14)
+ggplot(viridiplantae_class_relativeabundance_viridiplantae, aes(x = sample, y = abundance))+geom_bar(aes(fill = class), position = "fill", stat = "identity")+ scale_fill_manual(values =color)+xlab(label = NULL)+theme(legend.title = element_text(size = 18, face = "bold"),legend.text = element_text(size = 16, color = "black"),axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),axis.text.y = element_text(size = 16),axis.title = element_text(size = 20),strip.text.x = element_text(size = 18))+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1) ,labels = c("0%","25%","50%","75%","100%"))+ylab(label="Relative abundance (Viridiplantae count / total Viridiplantae count)")
+ggsave("viridiplantae_class_relativeabundance_viridiplantae.pdf",height=12)
+countplot_df<-as.data.frame(pivot_longer(as.data.frame(countmatrix),col=colnames(countmatrix),names_to="sample",values_to="abundance"))
+ggplot(countplot_df)+geom_density(aes(abundance,colour =sample),adjust=5000)+xlab(label = NULL)+theme(legend.title = element_text(size = 18, face = "bold"),legend.text = element_text(size = 16, color = "black"),axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),axis.text.y = element_text(size = 16),axis.title = element_text(size = 20),strip.text.x = element_text(size = 18))
+ggsave("count_density.pdf",width=20,height=20)
+fungi_order_list<-as.data.frame(table(gene_table$order[which(gene_table$kingdom=="Fungi")],useNA="ifany"),stringsAsFactors=FALSE)[,1]
+fungi_order_relativeabundance_fungi_df<-NULL
+for(i in fungi_order_list){
+	fungi_order_relativeabundance_fungi_df<-rbind(fungi_order_relativeabundance_fungi_df,colSums(gene_table[intersect(which(gene_table[,28]==i),which(gene_table[,25]== "Fungi")),1:24]))
+}
+
+rownames(fungi_order_relativeabundance_fungi_df)<-fungi_order_list
+fungi_order_relativeabundance_fungi<-as.data.frame(pivot_longer(as.data.frame(fungi_order_relativeabundance_fungi_df),col=colnames(fungi_order_relativeabundance_fungi_df),names_to="sample",values_to="abundance"))
+fungi_order_relativeabundance_fungi$order<-unlist(lapply(fungi_order_list,function(x) rep(x,24)))
+fungi_order_relativeabundance_fungi<-cbind(fungi_order_relativeabundance_fungi,apply(sample_inform,2,function(x)rep(x,27)))
+
+color<-random_color(27)
+ggplot(fungi_order_relativeabundance_fungi, aes(x = sample, y = abundance))+geom_bar(aes(fill = order), position = "fill", stat = "identity")+ scale_fill_manual(values =color)+xlab(label = NULL)+theme(legend.title = element_text(size = 18, face = "bold"),legend.text = element_text(size = 16, color = "black"),axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),axis.text.y = element_text(size = 16),axis.title = element_text(size = 20),strip.text.x = element_text(size = 18))+scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1) ,labels = c("0%","25%","50%","75%","100%"))+ylab(label="Relative abundance (Fungi count / total Fungi count)")
+ggsave("fungi_order_relativeabundance_fungi.pdf",width=10,height=10)
+
+fungi_order_relativeabundance_total<-as.data.frame(cbind(fungi_order_relativeabundance_fungi[,1],fungi_order_relativeabundance_fungi[,2]/colSums(countmatrix),fungi_order_relativeabundance_fungi[,3:6]))
+colnames(fungi_order_relativeabundance_total)<- colnames(fungi_order_relativeabundance_fungi)
+ggplot(fungi_order_relativeabundance_total, aes(x = sample, y = abundance))+geom_bar(aes(fill = order), position = "stack", stat = "identity")+ scale_fill_manual(values =color)+xlab(label = NULL)+theme(legend.title = element_text(size = 18, face = "bold"),legend.text = element_text(size = 16, color = "black"),axis.text.x = element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5),axis.text.y = element_text(size = 16),axis.title = element_text(size = 20),strip.text.x = element_text(size = 18))+ scale_y_continuous(breaks = c(0, 0.0025, 0.005, 0.0075, 0.01) ,labels = c("0%","0.25%","0.5%","0.75%","1%"))+ylab(label="Relative abundance (Fungi count / total count)")
+ggsave("fungi_order_relativeabundance_total.pdf",width=10,height=10)
+
+CueifongLake_nm<-which(sample_inform[,1]=="CueifongLake")
+Tsaopi_nm<-which(sample_inform[,1]=="Tsaopi")
+HIGH_nm<-which(sample_inform[,2]=="HIGH")
+LOW_nm<-which(sample_inform[,2]=="LOW")
+megan_plant<-read.table("megan_plant")
+megan_fungi<-read.table("megan_fungi")
+plant_CueifongLake_count_matrix<-countmatrix[which(rownames(countmatrix)%in%megan_plant[,1]),CueifongLake_nm]
+write.table(plant_CueifongLake_count_matrix,"lefse_input_plant_CueifongLake.txt",quote=FALSE,sep="\t")
+plant_Tsaopi_count_matrix<-countmatrix[which(rownames(countmatrix)%in%megan_plant[,1]),Tsaopi_nm]
+plant_Tsaopi_count_matrix<-plant_Tsaopi_count_matrix[which(rownames(plant_Tsaopi_count_matrix)%in%names(tail(sort(rowSums(plant_Tsaopi_count_matrix)),n=238380*0.6))),]
+write.table(plant_Tsaopi_count_matrix,"lefse_input_plant_Tsaopi.txt",quote=FALSE,sep="\t")
+fungi_CueifongLake_count_matrix<-countmatrix[which(rownames(countmatrix)%in%megan_fungi[,1]),CueifongLake_nm]
+write.table(fungi_CueifongLake_count_matrix,"lefse_input_fungi_CueifongLake.txt",quote=FALSE,sep="\t")
+fungi_Tsaopi_count_matrix<-countmatrix[which(rownames(countmatrix)%in%megan_fungi[,1]),Tsaopi_nm]
+write.table(fungi_Tsaopi_count_matrix,"lefse_input_fungi_Tsaopi.txt",quote=FALSE,sep="\t")
+
